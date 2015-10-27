@@ -17,14 +17,14 @@ object VcfStatistics {
 
   def countBaseChanges(variants: RDD[Variant]): Map[BaseChange, Count] =
     variants
-      .filter(isSNP)
+      .filter(isSnp)
       .map(baseChange)
       .countByValue
       .toMap
 
   def countMutationPatterns(variants: RDD[Variant]): Map[BaseChangePattern, Count] =
     variants
-      .filter(isSNP)
+      .filter(isSnp)
       .map(baseChange)
       .map(baseChangePattern)
       .countByValue

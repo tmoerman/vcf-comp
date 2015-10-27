@@ -1,9 +1,10 @@
 package org.tmoerman.vcf.comp
 
 import org.apache.spark.rdd.RDD
+import org.tmoerman.adam.fx.avro.AnnotatedGenotype
 import org.tmoerman.adam.fx.snpeff.SnpEffContext._
 import org.apache.spark.{SparkContext, Logging}
-import org.tmoerman.vcf.comp.core.Model.ComparisonRow
+import org.tmoerman.vcf.comp.core.Model._
 import org.tmoerman.vcf.comp.core.VcfComparison
 import VcfComparison._
 
@@ -36,7 +37,7 @@ class VcfComparisonContext(val sc: SparkContext) extends Serializable with Loggi
    * @param cache Default true: cache the resulting RDD.
    * @return Returns an RDD that acts as the basis for the comparison analysis.
    */
-  def startComparison(vcfFileA: String, vcfFileB: String, cache: Boolean = true): RDD[ComparisonRow] = {
+  def startComparison(vcfFileA: String, vcfFileB: String, cache: Boolean = true): RDD[(Category, AnnotatedGenotype)] = {
     val aRDD = sc.loadAnnotatedGenotypes(vcfFileA)
     val bRDD = sc.loadAnnotatedGenotypes(vcfFileB)
 

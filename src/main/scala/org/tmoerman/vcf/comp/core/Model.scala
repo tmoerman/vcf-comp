@@ -152,6 +152,8 @@ object Model extends Serializable {
     (cat, representant(cat, row))
   }
 
-  def isSnp(genotype: AnnotatedGenotype) = genotype.getGenotype.getVariant.isSingleNucleotideVariant()
+  def isSnp(genotype: AnnotatedGenotype): Boolean = isSnp(genotype.getGenotype.getVariant)
+
+  def isSnp(variant: Variant): Boolean = variant.isSingleNucleotideVariant()
 
 }
