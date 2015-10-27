@@ -1,8 +1,10 @@
-package org.tmoerman.vcf.comp
+package org.tmoerman.vcf.comp.core
 
 import org.bdgenomics.adam.rich.RichVariant._
 import org.bdgenomics.formats.avro.Variant
+import org.tmoerman.adam.fx.avro.AnnotatedGenotype
 
+import scala.Function._
 import scala.util.Try
 
 /**
@@ -21,9 +23,18 @@ object Model extends Serializable {
 
   type VariantKey = (Sample, Contig, Start, Ref, Alt)
 
-  def isSNP(v: Variant) = v.isSingleNucleotideVariant()
+  def variantKey(annotatedGenotype: AnnotatedGenotype): VariantKey = {
+    val genotype = annotatedGenotype.getGenotype
+    val variant  = genotype.getVariant
 
-  def assertSNP(v: Variant): Unit = if (! isSNP(v)) throw new Exception("variant is not a SNP")
+    (genotype.getSampleId,
+      variant.getContig.getContigName,
+      variant.getStart,
+      variant.getReferenceAllele,
+      variant.getAlternateAllele)
+  }
+
+  def assertSNP(v: Variant): Unit = if (! v.isSingleNucleotideVariant()) throw new Exception("variant is not a SNP")
 
   def trySNP(v: Variant): Try[Variant] = Try { assertSNP(v); v}
 
@@ -88,6 +99,39 @@ object Model extends Serializable {
     trySNP(v)
       .map(toBaseChange)
       .map(toBaseChangeType)
+      .get
+
+  // COMPARISON
+
+  type Category = String
+
+  val LEFT_UNIQUE  = "LEFT-UNIQUE"
+  val RIGHT_UNIQUE = "RIGHT-UNIQUE"
+  val CONCORDANT   = "CONCORDANT"
+
+  type ComparisonRow = (Option[AnnotatedGenotype], Option[AnnotatedGenotype])
+
+  type Labels = Map[Category, String]
+
+  def toCategory(row: ComparisonRow): Category =
+    row match {
+      case (Some(_), Some(_)) => CONCORDANT
+      case (Some(_), None) => LEFT_UNIQUE
+      case (None, Some(_)) => RIGHT_UNIQUE
+      case (None, None) => throw new Exception("glitch in the matrix")
+    }
+
+  def toRepresenter(category: Category, row: ComparisonRow): Option[AnnotatedGenotype] =
+    category match {
+      case CONCORDANT   => row._1
+      case LEFT_UNIQUE  => row._1
+      case RIGHT_UNIQUE => row._2
+    }
+  
+  def isSnp(cat: Category, row: ComparisonRow) =
+    toRepresenter(cat, row)
+      .map(_.getGenotype.getVariant)
+      .map(_.isSingleNucleotideVariant())
       .get
 
 }

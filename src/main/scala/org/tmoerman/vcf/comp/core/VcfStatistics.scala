@@ -1,14 +1,13 @@
-package org.tmoerman.vcf.comp
+package org.tmoerman.vcf.comp.core
 
 import org.apache.spark.rdd.RDD
-
-import Model._
 import org.bdgenomics.formats.avro.Variant
+import org.tmoerman.vcf.comp.core.Model._
 
 /**
  * @author Thomas Moerman
  */
-object VcfStats {
+object VcfStatistics {
 
   def countVariantTypes(variants: RDD[Variant]): Map[VariantType, Count] =
     variants

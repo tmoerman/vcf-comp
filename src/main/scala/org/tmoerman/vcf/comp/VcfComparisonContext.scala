@@ -3,7 +3,9 @@ package org.tmoerman.vcf.comp
 import org.apache.spark.rdd.RDD
 import org.tmoerman.adam.fx.snpeff.SnpEffContext._
 import org.apache.spark.{SparkContext, Logging}
-import org.tmoerman.vcf.comp.VcfComparison._
+import org.tmoerman.vcf.comp.core.Model.ComparisonRow
+import org.tmoerman.vcf.comp.core.VcfComparison
+import VcfComparison._
 
 /**
  * @author Thomas Moerman
@@ -43,7 +45,10 @@ class VcfComparisonContext(val sc: SparkContext) extends Serializable with Loggi
     if (cache) result.cache() else result
   }
 
-  val help =
+  /**
+   * @return Returns a help String.
+   */
+  def help =
     """
       | Documentation goes here.
     """.stripMargin
