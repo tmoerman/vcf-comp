@@ -4,7 +4,6 @@ import org.bdgenomics.adam.rich.RichVariant._
 import org.bdgenomics.formats.avro.Variant
 import org.tmoerman.adam.fx.avro.AnnotatedGenotype
 
-import scala.Function._
 import scala.util.Try
 
 /**
@@ -12,14 +11,30 @@ import scala.util.Try
  */
 object Model extends Serializable {
 
-  type Sample        = String
-  type Contig        = String
-  type Base          = String
-  type Ref           = String
-  type Alt           = String
+  type Base  = String
+  type Count = Long
 
-  type Start         = Long
-  type Count         = Long
+  def alleleFrequency(genotype: AnnotatedGenotype) = ???
+
+  // READ DEPTH
+
+  type ReadDepth = Int
+
+  def readDepth(genotype: AnnotatedGenotype): Int = genotype.getGenotype.getReadDepth
+
+  // QUALITY
+
+  type Quality = Float
+
+  def quality(genotype: AnnotatedGenotype): Float = genotype.getGenotype.getVariantCallingAnnotations.getVariantCallErrorProbability
+
+  // Variant Key
+
+  type Sample = String
+  type Contig = String
+  type Start  = Long
+  type Ref    = String
+  type Alt    = String
 
   type VariantKey = (Sample, Contig, Start, Ref, Alt)
 
@@ -47,7 +62,7 @@ object Model extends Serializable {
   val DELETION  = "DELETION"
   val OTHER     = "OTHER"
 
-  def toVariantType(v: Variant): VariantType =
+  def variantType(v: Variant): VariantType =
          if (v.isSingleNucleotideVariant()) SNP
     else if (v.isInsertion())               INSERTION
     else if (v.isDeletion())                DELETION
@@ -72,13 +87,16 @@ object Model extends Serializable {
 
   type BaseChange = (Base, Base)
 
-  def toBaseChange(v: Variant): BaseChange = (v.getReferenceAllele, v.getAlternateAllele)
+  def baseChange(v: Variant): BaseChange = (v.getReferenceAllele, v.getAlternateAllele)
 
   // BASE CHANGE PATTERN
 
   type BaseChangePattern = Set[Base]
 
-  def toBaseChangePattern(baseChange: BaseChange): BaseChangePattern = baseChange match { case (a, b) => Set(a, b) }
+  def baseChangePattern(baseChange: BaseChange): BaseChangePattern = baseChange match { case (a, b) => Set(a, b) }
+
+  def baseChangePattern(genotype: AnnotatedGenotype): BaseChangePattern =
+    baseChangePattern(baseChange(genotype.getGenotype.getVariant))
 
   // BASE CHANGE TYPE
 
@@ -87,18 +105,18 @@ object Model extends Serializable {
   val TRANSITION   = "Ti"
   val TRANSVERSION = "Tv"
 
-  def toBaseChangeType(baseChange: BaseChange): BaseChangeType =
-    toBaseChangePattern(baseChange)
+  def baseChangeType(baseChange: BaseChange): BaseChangeType =
+    baseChangePattern(baseChange)
       .map(toBaseType)
       .size match {
         case 1 => TRANSITION
         case 2 => TRANSVERSION
       }
 
-  def toBaseChangeType(v: Variant): BaseChangeType =
+  def baseChangeType(v: Variant): BaseChangeType =
     trySNP(v)
-      .map(toBaseChange)
-      .map(toBaseChangeType)
+      .map(baseChange)
+      .map(baseChangeType)
       .get
 
   // COMPARISON
@@ -113,25 +131,27 @@ object Model extends Serializable {
 
   type Labels = Map[Category, String]
 
-  def toCategory(row: ComparisonRow): Category =
+  def category(row: ComparisonRow): Category =
     row match {
       case (Some(_), Some(_)) => CONCORDANT
       case (Some(_), None) => LEFT_UNIQUE
       case (None, Some(_)) => RIGHT_UNIQUE
       case (None, None) => throw new Exception("glitch in the matrix")
     }
-
-  def toRepresenter(category: Category, row: ComparisonRow): Option[AnnotatedGenotype] =
+  
+  def representant(category: Category, row: ComparisonRow): AnnotatedGenotype =
     category match {
-      case CONCORDANT   => row._1
-      case LEFT_UNIQUE  => row._1
-      case RIGHT_UNIQUE => row._2
+      case CONCORDANT   => row._1.get
+      case LEFT_UNIQUE  => row._1.get
+      case RIGHT_UNIQUE => row._2.get
     }
   
-  def isSnp(cat: Category, row: ComparisonRow) =
-    toRepresenter(cat, row)
-      .map(_.getGenotype.getVariant)
-      .map(_.isSingleNucleotideVariant())
-      .get
+  def catRep(row: ComparisonRow): (Category, AnnotatedGenotype) = {
+    val cat: Category = category(row)
+
+    (cat, representant(cat, row))
+  }
+
+  def isSnp(genotype: AnnotatedGenotype) = genotype.getGenotype.getVariant.isSingleNucleotideVariant()
 
 }
