@@ -12,8 +12,6 @@ import org.tmoerman.vcf.comp.util.Victorinox._
  */
 object VcfComparison extends Serializable with Logging {
 
-  // TODO comparison row is not the main abstraction, (cat, rep) is!
-
   def compare(rddA: RDD[AnnotatedGenotype],
               rddB: RDD[AnnotatedGenotype]): RDD[(Category, AnnotatedGenotype)] = {
 
@@ -25,41 +23,43 @@ object VcfComparison extends Serializable with Logging {
     prep(rddA).cogroup(prep(rddB))
       .map(dropKey)
       .map{ case (a, b) => (a.headOption, b.headOption) }
-      .map(catRep)
+      .map(catRep()) // TODO maybe add labels
   }
 
-  def countVariantTypes(rdd: RDD[(Category, AnnotatedGenotype)]): Map[(Category, VariantType), Count] =
-    rdd
-      .map { case (cat, rep) => (cat, variantType(rep.getGenotype.getVariant)) }
-      .countByValue
-      .toMap
+  protected def maybeSnp(snpOnly: Boolean)(rep: AnnotatedGenotype): Boolean = if (snpOnly) isSnp(rep) else true
 
-  def countSNPs(rdd: RDD[(Category, AnnotatedGenotype)]): Map[Category, Count] =
+  def snpCount(rdd: RDD[(Category, AnnotatedGenotype)]): Map[Category, Count] =
     rdd
       .filter{ case (_, rep) => isSnp(rep) }
       .map{ case (cat, _) => cat }
       .countByValue
       .toMap
 
-  def countBaseChangesPatterns(rdd: RDD[(Category, AnnotatedGenotype)]): Map[(Category, BaseChangePattern), Count] =
+  protected def countByCategory[T](snpOnly: Boolean)
+                                  (f: AnnotatedGenotype => T)
+                                  (rdd: RDD[(Category, AnnotatedGenotype)]): Map[(Category, T), Count] =
     rdd
-      .filter{ case (_, rep) => isSnp(rep) }
-      .map{ case (cat, rep) => (cat, baseChangePattern(rep)) }
+      .filter{ case (_, rep) => maybeSnp(snpOnly)(rep) }
+      .mapValues(f)
       .countByValue
       .toMap
 
-  def readDepthDistribution(snpOnly: Boolean = true)(rdd: RDD[(Category, AnnotatedGenotype)]): Map[(Category, ReadDepth), Count] =
-    rdd
-      .filter{ case (_, rep) => if (snpOnly) isSnp(rep) else true }
-      .map{ case (cat, rep) => (cat, readDepth(rep)) }
-      .countByValue
-      .toMap
+  def variantTypeCount(rdd: RDD[(Category, AnnotatedGenotype)]): Map[(Category, VariantType), Count] =
+    countByCategory(snpOnly = false)(variantType)(rdd)
 
-  def qualityDistribution(snpOnly: Boolean = true)(rdd: RDD[(Category, AnnotatedGenotype)]): Map[(Category, Quality), Count] =
-    rdd
-      .filter{ case (_, rep) => if (snpOnly) isSnp(rep) else true }
-      .map{ case (cat, rep) => (cat, quality(rep)) }
-      .countByValue
-      .toMap
+  def countSnpBaseChanges(rdd: RDD[(Category, AnnotatedGenotype)]) =
+    countByCategory(snpOnly = true)(baseChange)(rdd)
+
+  def countSnpBaseChangesPatterns(rdd: RDD[(Category, AnnotatedGenotype)]) =
+    countByCategory(snpOnly = true)(baseChangePattern)(rdd)
+
+  def readDepthDistribution(snpOnly: Boolean = true)(rdd: RDD[(Category, AnnotatedGenotype)]) =
+    countByCategory(snpOnly)(readDepth)(rdd)
+
+  def qualityDistribution(snpOnly: Boolean = true)(rdd: RDD[(Category, AnnotatedGenotype)]) =
+    countByCategory(snpOnly)(quality)(rdd) // TODO bin quality
+
+  def alleleFrequencyDistribution(snpOnly: Boolean = true)(rdd: RDD[(Category, AnnotatedGenotype)]) =
+    countByCategory(snpOnly)(alleleFrequency)(rdd) // TODO bin allele frequency
 
 }
