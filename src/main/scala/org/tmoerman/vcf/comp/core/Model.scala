@@ -14,19 +14,24 @@ object Model extends Serializable {
   type Base  = String
   type Count = Long
 
-  def alleleFrequency(genotype: AnnotatedGenotype) = ???
+  // ALLELE FREQUENCY
+
+  type AlleleFrequency = Float
+
+  def alleleFrequency(genotype: AnnotatedGenotype): AlleleFrequency =
+    genotype.getGenotype.getAlternateReadDepth.toFloat / genotype.getGenotype.getReadDepth
 
   // READ DEPTH
 
   type ReadDepth = Int
 
-  def readDepth(genotype: AnnotatedGenotype): Int = genotype.getGenotype.getReadDepth
+  def readDepth(genotype: AnnotatedGenotype): ReadDepth = genotype.getGenotype.getReadDepth
 
   // QUALITY
 
   type Quality = Float
 
-  def quality(genotype: AnnotatedGenotype): Float = genotype.getGenotype.getVariantCallingAnnotations.getVariantCallErrorProbability
+  def quality(genotype: AnnotatedGenotype): Quality = genotype.getGenotype.getVariantCallingAnnotations.getVariantCallErrorProbability
 
   // Variant Key
 
@@ -68,6 +73,8 @@ object Model extends Serializable {
     else if (v.isDeletion())                DELETION
     else                                    OTHER
 
+  def variantType(genotype: AnnotatedGenotype): VariantType = variantType(genotype.getGenotype.getVariant)
+
   // BASE TYPE
 
   type BaseType = String
@@ -89,14 +96,15 @@ object Model extends Serializable {
 
   def baseChange(v: Variant): BaseChange = (v.getReferenceAllele, v.getAlternateAllele)
 
+  def baseChange(genotype: AnnotatedGenotype): BaseChange = baseChange(genotype.getGenotype.getVariant)
+
   // BASE CHANGE PATTERN
 
   type BaseChangePattern = Set[Base]
 
   def baseChangePattern(baseChange: BaseChange): BaseChangePattern = baseChange match { case (a, b) => Set(a, b) }
 
-  def baseChangePattern(genotype: AnnotatedGenotype): BaseChangePattern =
-    baseChangePattern(baseChange(genotype.getGenotype.getVariant))
+  def baseChangePattern(genotype: AnnotatedGenotype): BaseChangePattern = baseChangePattern(baseChange(genotype))
 
   // BASE CHANGE TYPE
 
@@ -123,9 +131,9 @@ object Model extends Serializable {
 
   type Category = String
 
-  val LEFT_UNIQUE  = "LEFT-UNIQUE"
-  val RIGHT_UNIQUE = "RIGHT-UNIQUE"
-  val CONCORDANT   = "CONCORDANT"
+  val A_ONLY = "A-ONLY"
+  val B_ONLY = "B-ONLY"
+  val BOTH   = "BOTH"
 
   type ComparisonRow = (Option[AnnotatedGenotype], Option[AnnotatedGenotype])
 
@@ -133,23 +141,25 @@ object Model extends Serializable {
 
   def category(row: ComparisonRow): Category =
     row match {
-      case (Some(_), Some(_)) => CONCORDANT
-      case (Some(_), None) => LEFT_UNIQUE
-      case (None, Some(_)) => RIGHT_UNIQUE
-      case (None, None) => throw new Exception("glitch in the matrix")
+      case (Some(_), Some(_)) => BOTH
+      case (Some(_), None   ) => A_ONLY
+      case (None   , Some(_)) => B_ONLY
+      case (None   , None   ) => throw new Exception("glitch in the matrix")
     }
   
   def representant(category: Category, row: ComparisonRow): AnnotatedGenotype =
     category match {
-      case CONCORDANT   => row._1.get
-      case LEFT_UNIQUE  => row._1.get
-      case RIGHT_UNIQUE => row._2.get
+      case BOTH   => row._1.get
+      case A_ONLY  => row._1.get
+      case B_ONLY => row._2.get
     }
   
-  def catRep(row: ComparisonRow): (Category, AnnotatedGenotype) = {
+  def catRep(labels: Option[Labels] = None)(row: ComparisonRow): (Category, AnnotatedGenotype) = {
     val cat: Category = category(row)
 
-    (cat, representant(cat, row))
+    val label = labels.map(map => map(cat)).getOrElse(cat)
+
+    (label, representant(cat, row))
   }
 
   def isSnp(genotype: AnnotatedGenotype): Boolean = isSnp(genotype.getGenotype.getVariant)
