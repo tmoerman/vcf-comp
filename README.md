@@ -22,7 +22,7 @@ libraryDependencies += "org.tmoerman" %% "vcf-comp" % "0.1.0"
 ```
 :remote-repo bintray-tmoerman % default % http://dl.bintray.com/tmoerman/maven % maven
 
-:dp org.tmoerman % vcf-comp_2.10 % 0.5.5
+:dp org.tmoerman % vcf-comp_2.10 % 0.1.0
 ```
 
 ##### Zeppelin
@@ -32,7 +32,7 @@ libraryDependencies += "org.tmoerman" %% "vcf-comp" % "0.1.0"
 
 z.addRepo("bintray-tmoerman").url("http://dl.bintray.com/tmoerman/maven")
 
-z.load("org.tmoerman:vcf-comp_2.10:0.5.5")
+z.load("org.tmoerman:vcf-comp_2.10:0.1.0")
 ```
 
 ## Usage
