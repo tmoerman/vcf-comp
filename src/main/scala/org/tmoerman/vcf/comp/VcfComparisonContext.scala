@@ -1,6 +1,7 @@
 package org.tmoerman.vcf.comp
 
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.rich.RichVariant
 import org.tmoerman.adam.fx.avro.AnnotatedGenotype
 import org.tmoerman.adam.fx.snpeff.SnpEffContext._
 import org.apache.spark.{SparkContext, Logging}
@@ -14,6 +15,10 @@ import VcfComparison._
 object VcfComparisonContext {
 
   implicit def toVcfComparisonContext(sc: SparkContext): VcfComparisonContext = new VcfComparisonContext(sc)
+
+  implicit def pimpRichVariantRDD(rdd: RDD[RichVariant]): RichVariantRDDFunctions = new RichVariantRDDFunctions(rdd)
+
+  implicit def pimpComparisonRDD(rdd: RDD[(Category, AnnotatedGenotype)]) : ComparisonRDDFunctions = new ComparisonRDDFunctions(rdd)
 
 }
 
@@ -34,16 +39,13 @@ class VcfComparisonContext(val sc: SparkContext) extends Serializable with Loggi
   /**
    * @param vcfFileA
    * @param vcfFileB
-   * @param cache Default true: cache the resulting RDD.
    * @return Returns an RDD that acts as the basis for the comparison analysis.
    */
-  def startComparison(vcfFileA: String, vcfFileB: String, cache: Boolean = true): RDD[(Category, AnnotatedGenotype)] = {
+  def startComparison(vcfFileA: String, vcfFileB: String): RDD[(Category, AnnotatedGenotype)] = {
     val aRDD = sc.loadAnnotatedGenotypes(vcfFileA)
     val bRDD = sc.loadAnnotatedGenotypes(vcfFileB)
 
-    val result = compare(aRDD, bRDD)
-
-    if (cache) result.cache() else result
+    compare(aRDD, bRDD)
   }
 
   /**
