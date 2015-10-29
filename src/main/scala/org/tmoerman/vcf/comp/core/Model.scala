@@ -3,6 +3,7 @@ package org.tmoerman.vcf.comp.core
 import org.bdgenomics.adam.rich.RichVariant._
 import org.bdgenomics.formats.avro.Variant
 import org.tmoerman.adam.fx.avro.AnnotatedGenotype
+import org.tmoerman.adam.fx.snpeff.model.RichAnnotatedGenotype
 
 import scala.util.Try
 
@@ -16,10 +17,10 @@ object Model extends Serializable {
 
   // ALLELE FREQUENCY
 
-  type AlleleFrequency = Float
+  type AlleleFrequency = Double
 
   def alleleFrequency(genotype: AnnotatedGenotype): AlleleFrequency =
-    genotype.getGenotype.getAlternateReadDepth.toFloat / genotype.getGenotype.getReadDepth
+    genotype.getGenotype.getAlternateReadDepth.toDouble / genotype.getGenotype.getReadDepth
 
   // READ DEPTH
 
@@ -29,9 +30,9 @@ object Model extends Serializable {
 
   // QUALITY
 
-  type Quality = Float
+  type Quality = Double
 
-  def quality(genotype: AnnotatedGenotype): Quality = genotype.getGenotype.getVariantCallingAnnotations.getVariantCallErrorProbability
+  def quality(genotype: AnnotatedGenotype): Quality = genotype.getGenotype.getVariantCallingAnnotations.getVariantCallErrorProbability.toDouble
 
   // Variant Key
 
@@ -94,9 +95,11 @@ object Model extends Serializable {
 
   type BaseChange = (Base, Base)
 
+  def format(baseChange: BaseChange): String = baseChange match { case (a,b) => s"$a->$b" }
+
   def baseChange(v: Variant): BaseChange = (v.getReferenceAllele, v.getAlternateAllele)
 
-  def baseChange(genotype: AnnotatedGenotype): BaseChange = baseChange(genotype.getGenotype.getVariant)
+  def baseChangeString(genotype: AnnotatedGenotype): String = format(baseChange(genotype.getGenotype.getVariant))
 
   // BASE CHANGE PATTERN
 
@@ -104,7 +107,9 @@ object Model extends Serializable {
 
   def baseChangePattern(baseChange: BaseChange): BaseChangePattern = baseChange match { case (a, b) => Set(a, b) }
 
-  def baseChangePattern(genotype: AnnotatedGenotype): BaseChangePattern = baseChangePattern(baseChange(genotype))
+  def baseChangePattern(genotype: AnnotatedGenotype): BaseChangePattern = baseChangePattern(baseChange(genotype.getGenotype.getVariant))
+
+  def baseChangePatternString(genotype: AnnotatedGenotype): String = baseChangePattern(genotype).toList.sorted.mkString(":")
 
   // BASE CHANGE TYPE
 
@@ -157,7 +162,7 @@ object Model extends Serializable {
   def catRep(labels: Option[Labels] = None)(row: ComparisonRow): (Category, AnnotatedGenotype) = {
     val cat: Category = category(row)
 
-    val label = labels.map(map => map(cat)).getOrElse(cat)
+    val label: String = labels.flatMap(_.get(cat)).getOrElse(cat)
 
     (label, representant(cat, row))
   }
@@ -165,5 +170,13 @@ object Model extends Serializable {
   def isSnp(genotype: AnnotatedGenotype): Boolean = isSnp(genotype.getGenotype.getVariant)
 
   def isSnp(variant: Variant): Boolean = variant.isSingleNucleotideVariant()
+
+  def hasClinvarAnnotations(r: RichAnnotatedGenotype) = r.annotations.exists(a => a.clinvarAnnotations.isDefined)
+
+  def hasDbSnpAnnotations(r: RichAnnotatedGenotype)   = r.annotations.exists(a => a.dbSnpAnnotations.isDefined)
+
+  def hasSnpEffAnnotations(r: RichAnnotatedGenotype)  = r.annotations.exists(a => a.functionalAnnotations.nonEmpty ||
+                                                                                  a.nonsenseMediatedDecay.nonEmpty ||
+                                                                                  a.lossOfFunction.nonEmpty)
 
 }
