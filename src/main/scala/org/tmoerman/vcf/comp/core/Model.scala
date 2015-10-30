@@ -48,9 +48,10 @@ object Model extends Serializable {
     val genotype = annotatedGenotype.getGenotype
     val variant  = genotype.getVariant
 
-    (genotype.getSampleId,
+    (genotype.getSampleId, // TODO is this necessary?
       variant.getContig.getContigName,
       variant.getStart,
+
       variant.getReferenceAllele,
       variant.getAlternateAllele)
   }
