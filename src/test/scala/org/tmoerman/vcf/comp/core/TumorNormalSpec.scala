@@ -68,34 +68,34 @@ class TumorNormalSpec extends BaseSparkContextSpec {
 //    write(out + "snpDbSNPRatio.txt", s)
 //  }
 
-  "exporting the entire data set" should "succeed" in {
-    val headers = List(
-      "sample_id",
-      "contig",
-      "start",
-      "category",
-      "base_change",
-      "base_change_pattern",
-      "read_depth",
-      "quality",
-      "allele_freq",
-      "Clinvar_annotated",
-      "DBSNP_annotated").mkString("\t") + "\n"
-
-    val labels = Map(
-      A_ONLY -> "tumor",
-      B_ONLY -> "normal")
-
-    val lines = rdd.filter{ case (_, rep) => isSnp(rep) }.enrich(labels).toLocalIterator
-
-    val file = new File(out + "dump.txt")
-    val bw = new BufferedWriter(new FileWriter(file))
-
-    bw.write(headers)
-    lines.foreach(line => bw.write(line))
-
-    bw.close()
-  }
+//  "exporting the entire data set" should "succeed" in {
+//    val headers = List(
+//      "sample_id",
+//      "contig",
+//      "start",
+//      "category",
+//      "base_change",
+//      "base_change_pattern",
+//      "read_depth",
+//      "quality",
+//      "allele_freq",
+//      "Clinvar_annotated",
+//      "DBSNP_annotated").mkString("\t") + "\n"
+//
+//    val labels = Map(
+//      A_ONLY -> "tumor",
+//      B_ONLY -> "normal")
+//
+//    val lines = rdd.filter{ case (_, rep) => isSnp(rep) }.enrich(labels).toLocalIterator
+//
+//    val file = new File(out + "dump.txt")
+//    val bw = new BufferedWriter(new FileWriter(file))
+//
+//    bw.write(headers)
+//    lines.foreach(line => bw.write(line))
+//
+//    bw.close()
+//  }
 
 
 }

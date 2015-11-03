@@ -19,7 +19,7 @@ class VcfComparisonSpec extends BaseSparkContextSpec {
   }
 
   "comparing the same VCF file" should "result in concordant genotypes only" in {
-    rdd.map(_._1).distinct().collect shouldBe Array(CONCORDANT)
+    rdd.flatMap(identity).map(_._1).distinct().collect shouldBe Array(CONCORDANT)
   }
 
 }

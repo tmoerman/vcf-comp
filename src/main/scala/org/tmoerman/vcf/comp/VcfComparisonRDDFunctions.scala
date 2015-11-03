@@ -8,32 +8,38 @@ import org.tmoerman.vcf.comp.core.VcfComparison._
 import org.tmoerman.adam.fx.snpeff.model.RichAnnotated._
 import org.tmoerman.vcf.comp.util.Victorinox._
 
-class VcfComparisonRDDFunctions(val rdd: RDD[(Category, AnnotatedGenotype)]) extends Serializable with Logging {
+class VcfComparisonRDDFunctions(val rdd: RDD[Iterable[(Category, AnnotatedGenotype)]]) extends Serializable with Logging {
 
   def snpCount =
     rdd
-      .filter{ case (_, rep) => isSnp(rep) }
+      .flatMap(identity)
       .map{ case (cat, _) => cat }
       .countByValue
       .toMap
 
-  def snpBaseChangeCount = countByCategory(snpOnly = true)(baseChangeString)(rdd)
+  def snpBaseChangeCount = countByCategory(baseChangeString)(rdd)
 
-  def snpBaseChangesPatternCount = countByCategory(snpOnly = true)(baseChangePatternString)(rdd)
+  def snpBaseChangesPatternCount = countByCategory(baseChangePatternString)(rdd)
 
   // TODO sensible default binning strategy
 
-  def readDepthDistribution(bin: Int => Int = identity) = countByCategory(snpOnly = true)(readDepth _ andThen bin)(rdd)
+  def readDepthCount(bin: Int => Int = identity) = countByCategory(readDepth _ andThen bin)(rdd)
 
-  def qualityDistribution(bin: Double => Double = identity) = countByCategory(snpOnly = true)(quality _ andThen bin)(rdd)
+  def qualityCount(bin: Double => Double = identity) = countByCategory(quality _ andThen bin)(rdd)
 
-  def alleleFrequencyDistribution(bin: Double => Double = identity) = countByCategory(snpOnly = true)(alleleFrequency _ andThen bin)(rdd)
+  def alleleFrequencyCount(bin: Double => Double = identity) = countByCategory(alleleFrequency _ andThen bin)(rdd)
 
-  def clinvarRatio = countByCategory(snpOnly = true)(hasClinvarAnnotations(_))(rdd)
+  def zygosityCount = countByCategory(zygosity)(rdd)
 
-  def dbSnpRatio = countByCategory(snpOnly = true)(hasDbSnpAnnotations(_))(rdd)
+  def functionalImpactCount = countByCategory(functionalImpact)(rdd)
 
-  def synonymousRatio = ??? // TODO implement
+  def clinvarRatio = countByCategory(hasClinvarAnnotations(_))(rdd)
+
+  def commonSnpRatio = countByCategory(hasDbSnpAnnotations(_))(rdd)
+
+//  def multiAllelicSnpRatio =
+//    rdd
+//      .filter()
 
 //  def withReadDepth(predicate: (ReadDepth) => Boolean) =
 //    rdd.filter{ case (_, genotype) => predicate(readDepth(genotype)) }
@@ -53,22 +59,22 @@ class VcfComparisonRDDFunctions(val rdd: RDD[(Category, AnnotatedGenotype)]) ext
 
   import org.tmoerman.adam.fx.snpeff.model.RichAnnotatedGenotype._
 
-  def enrich(labels: Labels): RDD[String] =
-    rdd
-      .map{ case (cat, rep) => {
-
-        List(
-          rep.getGenotype.getSampleId,
-          rep.getGenotype.getVariant.getContig.getContigName,
-          rep.getGenotype.getVariant.getStart,
-          labels.getOrElse(cat, cat),
-          baseChangeString(rep),
-          baseChangePatternString(rep),
-          readDepth(rep),
-          roundToDecimals(2)(quality(rep)),
-          roundToDecimals(2)(alleleFrequency(rep)),
-          hasClinvarAnnotations(rep),
-          hasDbSnpAnnotations(rep)).mkString("\t") + "\n"
-      }}
+//  def enrich(labels: Labels): RDD[String] =
+//    rdd
+//      .map{ case (cat, rep) => {
+//
+//        List(
+//          rep.getGenotype.getSampleId,
+//          rep.getGenotype.getVariant.getContig.getContigName,
+//          rep.getGenotype.getVariant.getStart,
+//          labels.getOrElse(cat, cat),
+//          baseChangeString(rep),
+//          baseChangePatternString(rep),
+//          readDepth(rep),
+//          roundToDecimals(2)(quality(rep)),
+//          roundToDecimals(2)(alleleFrequency(rep)),
+//          hasClinvarAnnotations(rep),
+//          hasDbSnpAnnotations(rep)).mkString("\t") + "\n"
+//      }}
 
 }

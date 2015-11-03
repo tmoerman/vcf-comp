@@ -17,7 +17,7 @@ object VcfComparisonContext {
 
   // implicit def pimpRichVariantRDD(rdd: RDD[RichVariant]): RichVariantRDDFunctions = ??? TODO complete
 
-  implicit def pimpComparisonRDD(rdd: RDD[(Category, AnnotatedGenotype)]) : VcfComparisonRDDFunctions = new VcfComparisonRDDFunctions(rdd)
+  implicit def pimpComparisonRDD(rdd: RDD[Iterable[(Category, AnnotatedGenotype)]]) : VcfComparisonRDDFunctions = new VcfComparisonRDDFunctions(rdd)
 
 }
 
@@ -46,7 +46,8 @@ class VcfComparisonContext(val sc: SparkContext) extends Serializable with Loggi
    */
   def startComparison(vcfFileA: String,
                       vcfFileB: String,
-                      params: VcfComparisonParams = DEFAULT_PARAMS): RDD[(Category, AnnotatedGenotype)] = {
+                      params: VcfComparisonParams = new VcfComparisonParams()): RDD[Iterable[(Category, AnnotatedGenotype)]] = {
+
     val aRDD = sc.loadAnnotatedGenotypes(vcfFileA)
     val bRDD = sc.loadAnnotatedGenotypes(vcfFileB)
 

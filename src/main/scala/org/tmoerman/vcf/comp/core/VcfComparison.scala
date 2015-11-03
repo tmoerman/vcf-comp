@@ -38,66 +38,83 @@ object VcfComparison extends Serializable with Logging {
   val CONCORDANT = "CONCORDANT"
   val DISCORDANT = "DISCORDANT"
 
-  type Labels = Map[Category, String]
+  type Label = String
+  type Labels = Map[Category, Label]
+
+  // TODO forget labels:
 
   type ComparisonRow = (Iterable[AnnotatedGenotype], Iterable[AnnotatedGenotype])
 
   def categorizedDelegates(labels: Labels)(row: ComparisonRow): Iterable[(Category, AnnotatedGenotype)] = {
 
     def labeledDelegates(category: Category)
-                        (genotypesByBaseChange: Map[BaseChange, Iterable[AnnotatedGenotype]]): Iterable[(Category, AnnotatedGenotype)] =
-      genotypesByBaseChange.mapValues(_.maxBy(quality)).values.map(withKey(labels.getOrElse(category, category)))
-    
+                        (genotypesByBaseChange: Map[BaseChange, Iterable[AnnotatedGenotype]]): Iterable[(Label, AnnotatedGenotype)] = {
+
+      val label = labels.getOrElse(category, category)
+
+      // entanglement going on here...
+      genotypesByBaseChange           // Map[BaseChange, Iterable[AnnotatedGenotype]]
+        .mapValues(_.maxBy(quality))  // Map[BaseChange, AnnotatedGenotyope]  -- select rep with max Quality
+        .values                       // Iterable[AnnotatedGenotype]          -- ignore base changes
+        .map(withKey(label))          // Iterable[(Label, AnnotatedGenotype)] -- add category labels
+    }
+
+    val temp: Map[Category, Map[BaseChange, Iterable[AnnotatedGenotype]]] = categorize(row)
+
+    ???
+  }
+
+  def categorize(row: ComparisonRow): Map[Category, Map[BaseChange, Iterable[AnnotatedGenotype]]] = {
     row match {
-      case (Nil, Nil) => throw new Exception("impossible")
+      case (Nil, Nil) => throw new scala.Exception("impossible")
 
-      case (a, Nil) => labeledDelegates(A_ONLY)(a.groupBy(baseChange))
+      case (a, Nil) => Map(A_ONLY -> a.groupBy(baseChange))
 
-      case (Nil, b) => labeledDelegates(B_ONLY)(b.groupBy(baseChange))
+      case (Nil, b) => Map(B_ONLY -> b.groupBy(baseChange))
 
       case (a, b) =>
         val A = a.groupBy(baseChange)
         val B = b.groupBy(baseChange)
 
-        val intersection  = A.intersectWith(B)(_ ++ _)
+        val intersection = A.intersectWith(B)(_ ++ _)
         val symmetricDiff = (A -- B.keys).unionWith(B -- A.keys)(_ ++ _)
 
-        labeledDelegates(CONCORDANT)(intersection) ++
-        labeledDelegates(DISCORDANT)(symmetricDiff)
+        Map(CONCORDANT -> intersection,
+            DISCORDANT -> symmetricDiff)
     }
   }
 
-  case class VcfComparisonParams(matchOnSampleId: Boolean   = false,
-                                 labels:          Labels    = Map()
-//                                 quality:         Quality   = null,
-//                                 readDepth:       ReadDepth = null
-                                  )
+  case class VcfComparisonParams(matchOnSampleId: Boolean = false,
+                                 categoryLabels:  Labels  = Map(),
+                                 qualityThresholds:   (Quality, Quality)     = (0, 0),
+                                 readDepthThresholds: (ReadDepth, ReadDepth) = (1, 1))
 
-  val DEFAULT_PARAMS = new VcfComparisonParams()
-
-  def compare(params: VcfComparisonParams = DEFAULT_PARAMS)
+  def compare(params: VcfComparisonParams = new VcfComparisonParams())
              (rddA: RDD[AnnotatedGenotype],
-              rddB: RDD[AnnotatedGenotype]): RDD[(Category, AnnotatedGenotype)] = {
+              rddB: RDD[AnnotatedGenotype]): RDD[Iterable[(Category, AnnotatedGenotype)]] = {
 
-    def keyed(rdd: RDD[AnnotatedGenotype]) = rdd.keyBy(variantKey(params.matchOnSampleId))
+    def prep(rdd: RDD[AnnotatedGenotype]) =
+      rdd
+        .filter(isSnp)
+        .keyBy(variantKey(params.matchOnSampleId))
 
-    keyed(rddA).cogroup(keyed(rddB))
+    prep(rddA).cogroup(prep(rddB))
       .map(dropKey)
-      .flatMap(categorizedDelegates(params.labels))
+      .map(categorizedDelegates(params.categoryLabels))
   }
 
-  def countByCategory[T](snpOnly: Boolean)
-                        (projection: AnnotatedGenotype => T)
-                        (rdd: RDD[(Category, AnnotatedGenotype)]): Map[(Category, T), Count] = {
-
-    def maybeSnp(snpOnly: Boolean)(representative: AnnotatedGenotype) = if (snpOnly) isSnp(representative) else true
-
+//  def countByCategory[T](projection: Iterable[(Category, AnnotatedGenotype)] => T, snpOnly: Boolean = true)
+//                        (rdd: RDD[Iterable[(Category, AnnotatedGenotype)]]): Map[(Category, T), Count] = {
+//
+//  }
+  
+  def countByCategory[T](projection: AnnotatedGenotype => T)
+                        (rdd: RDD[Iterable[(Category, AnnotatedGenotype)]]): Map[(Category, T), Count] =
     rdd
-      .filter{ case (_, rep) => maybeSnp(snpOnly)(rep) }
+      .flatMap(identity)
       .mapValues(projection)
       .countByValue
       .toMap
-  }
 
 
 }
