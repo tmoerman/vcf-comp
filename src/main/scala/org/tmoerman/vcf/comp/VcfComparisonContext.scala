@@ -1,7 +1,6 @@
 package org.tmoerman.vcf.comp
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.rich.RichVariant
 import org.tmoerman.adam.fx.avro.AnnotatedGenotype
 import org.tmoerman.adam.fx.snpeff.SnpEffContext._
 import org.apache.spark.{SparkContext, Logging}
@@ -32,20 +31,26 @@ class VcfComparisonContext(val sc: SparkContext) extends Serializable with Loggi
     sc
       .textFile(vcfFile)
       .toLocalIterator
+      .toList
       .takeWhile(line => line.startsWith("##"))
       .map(_.drop(2).split("=", 2) match { case Array(l, r, _*) => (l, r) })
-      .foldLeft(Map[String, List[String]]()){ case (m, (k, v)) => m + (k -> m.get(k).map(v :: _).getOrElse(v :: Nil)) }
+      .groupBy(_._1)
+      .mapValues(_.map(_._2))
+
+      //.foldLeft(Map[String, List[String]]()){ case (m, (k, v)) => m + (k -> m.get(k).map(v :: _).getOrElse(v :: Nil)) }
 
   /**
    * @param vcfFileA
    * @param vcfFileB
    * @return Returns an RDD that acts as the basis for the comparison analysis.
    */
-  def startComparison(vcfFileA: String, vcfFileB: String)(implicit labels: Labels = null): RDD[(Category, AnnotatedGenotype)] = {
+  def startComparison(vcfFileA: String,
+                      vcfFileB: String,
+                      params: VcfComparisonParams = DEFAULT_PARAMS): RDD[(Category, AnnotatedGenotype)] = {
     val aRDD = sc.loadAnnotatedGenotypes(vcfFileA)
     val bRDD = sc.loadAnnotatedGenotypes(vcfFileB)
 
-    compare(Option(labels))(aRDD, bRDD)
+    compare(params)(aRDD, bRDD)
   }
 
 }

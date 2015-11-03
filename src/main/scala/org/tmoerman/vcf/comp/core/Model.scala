@@ -1,7 +1,7 @@
 package org.tmoerman.vcf.comp.core
 
 import org.bdgenomics.adam.rich.RichVariant._
-import org.bdgenomics.formats.avro.Variant
+import org.bdgenomics.formats.avro.{GenotypeAllele, Variant}
 import org.tmoerman.adam.fx.avro.AnnotatedGenotype
 import org.tmoerman.adam.fx.snpeff.model.RichAnnotatedGenotype
 
@@ -34,27 +34,7 @@ object Model extends Serializable {
 
   def quality(genotype: AnnotatedGenotype): Quality = genotype.getGenotype.getVariantCallingAnnotations.getVariantCallErrorProbability.toDouble
 
-  // Variant Key
-
-  type Sample = String
-  type Contig = String
-  type Start  = Long
-  type Ref    = String
-  type Alt    = String
-
-  type VariantKey = (Sample, Contig, Start, Ref, Alt)
-
-  def variantKey(annotatedGenotype: AnnotatedGenotype): VariantKey = {
-    val genotype = annotatedGenotype.getGenotype
-    val variant  = genotype.getVariant
-
-    (genotype.getSampleId, // TODO is this necessary?
-      variant.getContig.getContigName,
-      variant.getStart,
-
-      variant.getReferenceAllele,
-      variant.getAlternateAllele)
-  }
+  // SNP
 
   def assertSNP(v: Variant): Unit = if (! v.isSingleNucleotideVariant()) throw new Exception("variant is not a SNP")
 
@@ -100,6 +80,8 @@ object Model extends Serializable {
 
   def baseChange(v: Variant): BaseChange = (v.getReferenceAllele, v.getAlternateAllele)
 
+  def baseChange(genotype: AnnotatedGenotype): BaseChange = baseChange(genotype.getGenotype.getVariant)
+
   def baseChangeString(genotype: AnnotatedGenotype): String = format(baseChange(genotype.getGenotype.getVariant))
 
   // BASE CHANGE PATTERN
@@ -133,44 +115,19 @@ object Model extends Serializable {
       .map(baseChangeType)
       .get
 
-  // COMPARISON
-
-  type Category = String
-
-  val A_ONLY = "A-ONLY"
-  val B_ONLY = "B-ONLY"
-  val BOTH   = "BOTH"
-
-  type ComparisonRow = (Option[AnnotatedGenotype], Option[AnnotatedGenotype])
-
-  type Labels = Map[Category, String]
-
-  def category(row: ComparisonRow): Category =
-    row match {
-      case (Some(_), Some(_)) => BOTH
-      case (Some(_), None   ) => A_ONLY
-      case (None   , Some(_)) => B_ONLY
-      case (None   , None   ) => throw new Exception("glitch in the matrix")
-    }
-  
-  def representant(category: Category, row: ComparisonRow): AnnotatedGenotype =
-    category match {
-      case BOTH   => row._1.get
-      case A_ONLY  => row._1.get
-      case B_ONLY => row._2.get
-    }
-  
-  def catRep(labels: Option[Labels] = None)(row: ComparisonRow): (Category, AnnotatedGenotype) = {
-    val cat: Category = category(row)
-
-    val label: String = labels.flatMap(_.get(cat)).getOrElse(cat)
-
-    (label, representant(cat, row))
-  }
+  // SNP
 
   def isSnp(genotype: AnnotatedGenotype): Boolean = isSnp(genotype.getGenotype.getVariant)
 
   def isSnp(variant: Variant): Boolean = variant.isSingleNucleotideVariant()
+
+  // ANNOTATIONS
+
+  import org.bdgenomics.adam.rich.RichGenotype._
+
+  import scala.collection.JavaConversions._
+
+  // def isHomozygous(r: RichAnnotatedGenotype) = r.genotype.getType =
 
   def hasClinvarAnnotations(r: RichAnnotatedGenotype) = r.annotations.exists(a => a.clinvarAnnotations.isDefined)
 

@@ -12,8 +12,11 @@ import scala.reflect.ClassTag
  */
 object Victorinox {
 
-  // TODO make Float a generic numeric type
   def withMax[A, N](f: A => Double)(l: A, r: A): A = if (f(l) > f(r)) l else r
+
+  def withKey[A, K](k: K)(a: A): (K, A) = (k, a)
+
+  def keyBy[A, K](f: A => K)(a: A): (K, A) = (f(a), a)
 
   def dropKey[T: ClassTag]: ((_, T)) => T = _._2
 
@@ -24,6 +27,15 @@ object Victorinox {
     val file = new File(fileName)
     val bw = new BufferedWriter(new FileWriter(file))
     bw.write(content)
+    bw.close()
+  }
+
+  def write(fileName: String, lines: Iterator[String]): Unit = {
+    val file = new File(fileName)
+    val bw = new BufferedWriter(new FileWriter(file))
+
+    lines.foreach(line => bw.write(line))
+
     bw.close()
   }
 

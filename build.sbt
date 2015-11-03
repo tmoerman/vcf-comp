@@ -22,8 +22,7 @@ libraryDependencies ++= Seq(
   "org.bdgenomics.bdg-formats" % "bdg-formats" % "0.4.0",
   "org.tmoerman" %% "adam-fx" % "0.5.3",
   "org.scalatest" %% "scalatest" % "2.2.4" % "test",
-
-  compilerPlugin("org.scalamacros" % "paradise" % "2.0.1" cross CrossVersion.full)
+  "org.scalaz" %% "scalaz-core" % "7.1.4"
 )
 
 fork in run := true
