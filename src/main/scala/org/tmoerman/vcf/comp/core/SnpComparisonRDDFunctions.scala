@@ -7,17 +7,13 @@ import org.tmoerman.adam.fx.snpeff.model.RichAnnotated._
 import org.tmoerman.vcf.comp.core.Model._
 import org.tmoerman.vcf.comp.core.SnpComparison._
 
-class SnpComparisonRDDFunctions(val rdd: RDD[Map[Category, Iterable[AnnotatedGenotype]]]) extends Serializable with Logging {
+class SnpComparisonRDDFunctions(val rdd: RDD[(Category, AnnotatedGenotype)]) extends Serializable with Logging {
 
   // This delegate selection strategy should be compared to simply flattening the data structure
 
-  private def electDelegate(genotypes: Iterable[AnnotatedGenotype]): AnnotatedGenotype = genotypes.maxBy(quality)
-
-  lazy val delegates: RDD[(Category, AnnotatedGenotype)] = rdd.flatMap(_.mapValues(electDelegate))
-
   def categoryCount =
-    delegates
-      .map{ case (cat, _) => cat }
+    rdd
+      .map{ case (cat, _) => name(cat) }
       .countByValue
       .toMap
 
@@ -41,8 +37,9 @@ class SnpComparisonRDDFunctions(val rdd: RDD[Map[Category, Iterable[AnnotatedGen
 
   def commonSnpRatio = countByCategory(hasDbSnpAnnotations(_))
 
-  def countByCategory[P](projection: AnnotatedGenotype => P): Map[(Category, P), Count] =
-    delegates
+  def countByCategory[P](projection: AnnotatedGenotype => P): Map[(String, P), Count] =
+    rdd
+      .map{ case (cat, rep) => (name(cat), rep) }
       .mapValues(projection)
       .countByValue
       .toMap

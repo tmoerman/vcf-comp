@@ -61,22 +61,25 @@ object SnpComparison extends Serializable with Logging {
         val mA = genotypesA.groupBy(baseChange)
         val mB = genotypesB.groupBy(baseChange)
 
-        val concordant: Map[Category, Map[BaseChange, Iterable[AnnotatedGenotype]]] =
+        lazy val concordant: Map[Category, Map[BaseChange, Iterable[AnnotatedGenotype]]] =
           (mA intersectWith mB) { case t => t }
             .toIterable
             .map { case (baseChange, (gtA, gtB)) => ((baseChange, gtA), (baseChange, gtB)) }
             .unzip match {
-              case (concordantA, concordantB) => Map((A, CONCORDANT) -> concordantA.toMap,
-                                                     (B, CONCORDANT) -> concordantB.toMap) }
+              case (Nil, Nil) => Map() // unzip yields a tuple of Nils if the intersection is empty
+              case (ccA, ccB) => Map((A, CONCORDANT) -> ccA.toMap,
+                                     (B, CONCORDANT) -> ccB.toMap) }
 
-        val A_min_B = (mA -- mB.keys).mapKeys(withKey((A, DISCORDANT)))
-        val B_min_A = (mB -- mA.keys).mapKeys(withKey((B, DISCORDANT)))
+        lazy val A_min_B = (mA -- mB.keys).mapKeys(withKey((A, DISCORDANT)))
+        lazy val B_min_A = (mB -- mA.keys).mapKeys(withKey((B, DISCORDANT)))
 
-        val discordant: Map[Category, Map[BaseChange, Iterable[AnnotatedGenotype]]] =
+        lazy val discordant =
           (A_min_B ++ B_min_A)
             .toIterable // mapping over an Iterable differs from mapping over a Map
-            .map { case ((cat, baseChange), genotypes) => Map(cat -> Map(baseChange -> genotypes.toList)) }
-            .reduce(_ |+| _)
+            .map { case ((cat, baseChange), genotypes) => Map(cat -> Map(baseChange -> genotypes.toList)) } match {
+              case Nil  => Map()
+              case list => list.reduce(_ |+| _)
+            }
 
         concordant ++ discordant
     }
@@ -88,21 +91,38 @@ object SnpComparison extends Serializable with Logging {
 
   def compareSnps(params: VcfComparisonParams = new VcfComparisonParams())
                  (rddA: RDD[AnnotatedGenotype],
-                  rddB: RDD[AnnotatedGenotype]): RDD[Map[Category, Iterable[AnnotatedGenotype]]] = params match {
+                  rddB: RDD[AnnotatedGenotype]): RDD[(Category, AnnotatedGenotype)] = params match {
 
     case VcfComparisonParams(matchOnSampleId, (labelA, labelB), (qA, qB), (rdA, rdB)) =>
 
-      def prep(q: Quality, rd: ReadDepth, rdd: RDD[AnnotatedGenotype]) =
+      def prep(q: Quality, rd: ReadDepth, rdd: RDD[AnnotatedGenotype]): RDD[(VariantKey, AnnotatedGenotype)] =
         rdd
           .filter(isSnp)
           .filter(quality(_) >= q)
           .filter(readDepth(_) >= rd)
           .keyBy(variantKey(params.matchOnSampleId))
 
-      prep(qA, rdA, rddA).cogroup(prep(qB, rdB, rddB))
-        .map(dropKey)                                              // coGroup:             (Iterable[AnnotatedGenotype], Iterable[AnnotatedGenotype])
-        .map(categorize(A = labelA, B = labelB))                   // categorized:         Map[Category, Map[BaseChange, Iterable[AnnotatedGenotype]]]
-        .map(_.mapValues(_.mapValues(_.maxBy(quality)).values))    // max Q by BaseChange: Map[Category, Iterable[AnnotatedGenotype]]
+      val genotypesByCategory: RDD[Map[Category, Iterable[AnnotatedGenotype]]] =
+        prep(qA, rdA, rddA).cogroup(prep(qB, rdB, rddB))
+          .map(dropKey)                                              // coGroup:             (Iterable[AnnotatedGenotype], Iterable[AnnotatedGenotype])
+          .map(categorize(A = labelA, B = labelB))                   // categorized:         Map[Category, Map[BaseChange, Iterable[AnnotatedGenotype]]]
+          .map(_.mapValues(_.mapValues(_.maxBy(quality)).values))    // max Q by BaseChange: Map[Category, Iterable[AnnotatedGenotype]]
+
+      def maxQual(genotypes: Iterable[AnnotatedGenotype]) = genotypes.maxBy(quality)
+      def head   (genotypes: Iterable[AnnotatedGenotype]) = genotypes.head
+
+      val selectDelegate = maxQual _ // TODO choose in function of parameter
+
+      def collapseByDelegate(m: Map[Category, Iterable[AnnotatedGenotype]]) = m.mapValues(selectDelegate)
+
+      def collapseFlat(m: Map[Category, Iterable[AnnotatedGenotype]]) = flattenWithKey(m)
+
+      genotypesByCategory.flatMap(collapseFlat)
   }
+
+  def collapseFlat(m: Map[Category, Iterable[AnnotatedGenotype]]) = m.flatMap {case (cat, it) => it.map(e => (cat, e)) }
+
+  //def collapseFlat2(m: Map[Category, Iterable[AnnotatedGenotype]]): Iterable[(Category, AnnotatedGenotype)] = m.flatten
+
 
 }
