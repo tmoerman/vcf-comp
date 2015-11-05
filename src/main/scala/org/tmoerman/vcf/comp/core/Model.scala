@@ -1,9 +1,12 @@
 package org.tmoerman.vcf.comp.core
 
+import org.bdgenomics.adam.rich.RichGenotype._
 import org.bdgenomics.adam.rich.RichVariant._
-import org.bdgenomics.formats.avro.{GenotypeAllele, Variant}
-import org.tmoerman.adam.fx.avro.AnnotatedGenotype
+import org.bdgenomics.formats.avro.GenotypeAllele.{Alt, Ref}
+import org.bdgenomics.formats.avro.{GenotypeType, GenotypeAllele, Variant}
+import org.tmoerman.adam.fx.avro.{Impact, AnnotatedGenotype}
 import org.tmoerman.adam.fx.snpeff.model.RichAnnotatedGenotype
+import scala.collection.JavaConversions._
 
 import scala.util.Try
 
@@ -109,11 +112,7 @@ object Model extends Serializable {
         case 2 => TRANSVERSION
       }
 
-  def baseChangeType(v: Variant): BaseChangeType =
-    trySNP(v)
-      .map(baseChange)
-      .map(baseChangeType)
-      .get
+  def baseChangeType(v: Variant): BaseChangeType = trySNP(v).map(baseChange).map(baseChangeType).get
 
   // SNP
 
@@ -121,13 +120,30 @@ object Model extends Serializable {
 
   def isSnp(variant: Variant): Boolean = variant.isSingleNucleotideVariant()
 
+  // ZYGOSITY
+
+  type Zygosity = String
+
+  val HOMOZYGOUS   = "HOMOZYGOUS"
+  val HETEROZYGOUS = "HETEROZYGOUS"
+  val NO_CALL      = "NO CALL"
+
+  def zygosity(genotype: AnnotatedGenotype): Zygosity = genotype.getGenotype.getAlleles.toList.distinct match { // @see RichGenotype.getType
+    case List(Ref)        => HOMOZYGOUS
+    case List(Alt)        => HOMOZYGOUS
+    case List(Ref, Alt) |
+         List(Alt, Ref)   => HETEROZYGOUS
+    case _                => NO_CALL
+  }
+
+  // IMPACT
+
+  def functionalImpact(genotype: AnnotatedGenotype): String =
+    genotype.getAnnotations.getFunctionalAnnotations.map(_.getImpact).sorted.headOption.map(_.toString).getOrElse("NONE")
+
+  // TODO synonymous / non-synonymous count
+
   // ANNOTATIONS
-
-  import org.bdgenomics.adam.rich.RichGenotype._
-
-  import scala.collection.JavaConversions._
-
-  // def isHomozygous(r: RichAnnotatedGenotype) = r.genotype.getType =
 
   def hasClinvarAnnotations(r: RichAnnotatedGenotype) = r.annotations.exists(a => a.clinvarAnnotations.isDefined)
 

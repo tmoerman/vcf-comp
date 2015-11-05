@@ -5,8 +5,8 @@ import org.tmoerman.adam.fx.avro.AnnotatedGenotype
 import org.tmoerman.adam.fx.snpeff.SnpEffContext._
 import org.apache.spark.{SparkContext, Logging}
 import org.tmoerman.vcf.comp.core.Model._
-import org.tmoerman.vcf.comp.core.VcfComparison
-import VcfComparison._
+import org.tmoerman.vcf.comp.core.{SnpComparisonRDDFunctions, SnpComparison}
+import SnpComparison._
 
 /**
  * @author Thomas Moerman
@@ -17,7 +17,7 @@ object VcfComparisonContext {
 
   // implicit def pimpRichVariantRDD(rdd: RDD[RichVariant]): RichVariantRDDFunctions = ??? TODO complete
 
-  implicit def pimpComparisonRDD(rdd: RDD[(Category, AnnotatedGenotype)]) : VcfComparisonRDDFunctions = new VcfComparisonRDDFunctions(rdd)
+  implicit def pimpSnpComparisonRDD(rdd: RDD[Map[Category, Iterable[AnnotatedGenotype]]]) : SnpComparisonRDDFunctions = new SnpComparisonRDDFunctions(rdd)
 
 }
 
@@ -44,13 +44,14 @@ class VcfComparisonContext(val sc: SparkContext) extends Serializable with Loggi
    * @param vcfFileB
    * @return Returns an RDD that acts as the basis for the comparison analysis.
    */
-  def startComparison(vcfFileA: String,
-                      vcfFileB: String,
-                      params: VcfComparisonParams = DEFAULT_PARAMS): RDD[(Category, AnnotatedGenotype)] = {
+  def startSnpComparison(vcfFileA: String,
+                         vcfFileB: String,
+                         params: VcfComparisonParams = new VcfComparisonParams()): RDD[Map[Category, Iterable[AnnotatedGenotype]]] = {
+
     val aRDD = sc.loadAnnotatedGenotypes(vcfFileA)
     val bRDD = sc.loadAnnotatedGenotypes(vcfFileB)
 
-    compare(params)(aRDD, bRDD)
+    compareSnps(params)(aRDD, bRDD)
   }
 
 }

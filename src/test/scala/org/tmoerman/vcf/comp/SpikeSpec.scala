@@ -1,11 +1,13 @@
 package org.tmoerman.vcf.comp
 
-import org.scalatest.FlatSpec
+import org.scalatest.{Matchers, FlatSpec}
+import org.tmoerman.adam.fx.avro.Impact
+import org.tmoerman.adam.fx.avro.Impact._
 
 /**
  * @author Thomas Moerman
  */
-class SpikeSpec extends FlatSpec {
+class SpikeSpec extends FlatSpec with Matchers {
 
   "bla" should "bla" in {
 
@@ -19,6 +21,12 @@ class SpikeSpec extends FlatSpec {
     }
 
     println(r)
+  }
+
+  "java enums" should "be sorted correctly" in {
+
+    List(LOW, HIGH, MODERATE, MODIFIER).sorted shouldBe List(HIGH, MODERATE, LOW, MODIFIER)
+
   }
 
 }

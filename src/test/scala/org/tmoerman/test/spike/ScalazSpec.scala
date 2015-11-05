@@ -18,4 +18,59 @@ class ScalazSpec extends FlatSpec {
 
   }
 
+  "semigroup magic" should "bla" in {
+    val a = Map(("a") -> Map(1 -> 11), ("b") -> Map(2 -> 22))
+    val b = Map(("a") -> Map(5 -> 55), ("c") -> Map(3 -> 33))
+
+    val r = List(a, b).reduce(_ |+| _)
+
+    println(r)
+  }
+
+  import org.tmoerman.vcf.comp.util.Victorinox._
+
+  "intersecting maps" should "bla" in {
+    val A = Map("a->t" -> List(1, 2), "c->g" -> List(4), "g->t" -> List(666), "k->l" -> List(99))
+    val B = Map("a->t" -> List(3,8), "c->g" -> List(5), "t->a" -> List(777))
+
+    val concordant =
+      (A intersectWith B){ case pair => pair }
+        .toList
+        .map{ case (k, (a, b)) => ((k, a), (k, b))}
+        .unzip match { case (concA, concB) =>
+          Map(("A", "CONCORDANT") -> concA.toMap,
+              ("B", "CONCORDANT") -> concB.toMap)
+        }
+
+    val concordant2 =
+      (A intersectWithKey B){ case (k, a, b) => ((k, a), (k, b)) }
+        .map(dropKey)
+        .unzip match {
+          case (concA, concB) => Map (("A", "CONCORDANT") -> concA.toMap,
+                                      ("B", "CONCORDANT") -> concB.toMap)
+        }
+
+    val discordant =
+      ((A -- B.keys).mapKeys(bc => (("A", "Disc"), bc)) ++
+       (B -- A.keys).mapKeys(bc => (("B", "Disc"), bc)))//(_ ++ _)
+        .toList // mapping over a List != mapping over a Map
+        .map{case ((cat, bc), discA) => Map(cat -> Map(bc -> discA))}
+        .reduce(_ |+| _)
+        //.reduce(_ ++ _)
+
+        //.mapValues(_.unzip)
+
+//        .unzip match { case (concA, concB) =>
+//          (concA.map(_.head).map(e => ("A", e)),
+//           concB.map(_.head).map(e => ("B", e)))}
+
+    println(concordant)
+  }
+
+  "unioning maps" should "bla" in {
+
+
+
+  }
+
 }
