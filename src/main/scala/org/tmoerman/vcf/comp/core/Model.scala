@@ -141,6 +141,8 @@ object Model extends Serializable {
   def functionalImpact(genotype: AnnotatedGenotype): String =
     genotype.getAnnotations.getFunctionalAnnotations.map(_.getImpact).sorted.headOption.map(_.toString).getOrElse("NONE")
 
+  // TODO synonymous / non-synonymous count
+
   // ANNOTATIONS
 
   def hasClinvarAnnotations(r: RichAnnotatedGenotype) = r.annotations.exists(a => a.clinvarAnnotations.isDefined)
