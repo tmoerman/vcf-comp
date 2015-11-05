@@ -20,6 +20,9 @@ object Victorinox {
 
   def dropKey[T: ClassTag]: ((_, T)) => T = _._2
 
+  def flattenWithKey[K, A](m: Map[K, Iterable[A]]): Iterable[(K, A)] =
+    m.flatMap{ case (k, it) => it.map(a => (k, a))}
+
   def toCSV[A, B, C](h: List[String], m: Map[(A, B), C]): String =
     h.mkString("\t") + "\n" + m.toList.map{ case ((a, b), c) => s"$a\t$b\t$c" }.sorted.mkString("\n")
 
