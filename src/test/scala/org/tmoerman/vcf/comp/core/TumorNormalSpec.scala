@@ -26,14 +26,14 @@ class TumorNormalSpec extends BaseSparkContextSpec {
   val rdd = sc.startSnpComparison(tumor, normal).cache()
 
   "export snpCount" should "succeed" in {
-    val snpCount = rdd.count
+    val snpCount = rdd.categoryCount
     val s = s"category\tcount\n" + snpCount.map{ case (cat, count) => s"$cat\t$count" }.mkString("\n")
 
     write(out + "snpCount.txt", s)
   }
 
   "export base change count " should "succeed" in {
-    val s = toCSV(List("category", "base change", "count"), rdd.snpBaseChangeCount)
+    val s = toCSV(List("category", "base change", "count"), rdd.baseChangeCount)
     write(out + "snpBaseChangeCount.txt", s)
   }
 

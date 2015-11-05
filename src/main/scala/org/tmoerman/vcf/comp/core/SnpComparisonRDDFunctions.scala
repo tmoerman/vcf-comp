@@ -15,7 +15,7 @@ class SnpComparisonRDDFunctions(val rdd: RDD[Map[Category, Iterable[AnnotatedGen
 
   lazy val delegates: RDD[(Category, AnnotatedGenotype)] = rdd.flatMap(_.mapValues(electDelegate))
 
-  def count =
+  def categoryCount =
     delegates
       .map{ case (cat, _) => cat }
       .countByValue
