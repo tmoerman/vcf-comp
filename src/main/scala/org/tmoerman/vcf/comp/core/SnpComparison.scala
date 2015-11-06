@@ -117,13 +117,7 @@ object SnpComparison extends Serializable with Logging {
           .map(dropKey)                                                     // coGroup:             (Iterable[AnnotatedGenotype], Iterable[AnnotatedGenotype])
           .map(categorize(A = labelA, B = labelB, unifyConcordant = unify)) // categorized:         Map[Category, Map[BaseChange, Iterable[AnnotatedGenotype]]]
           .map(_.mapValues(_.mapValues(_.maxBy(quality)).values))           // max Q by BaseChange: Map[Category, Iterable[AnnotatedGenotype]]
-
-//      def maxQual(genotypes: Iterable[AnnotatedGenotype]) = genotypes.maxBy(quality)
-//      def head   (genotypes: Iterable[AnnotatedGenotype]) = genotypes.head
-//      val selectDelegate = maxQual _
-//      def collapseByDelegate(m: Map[Category, Iterable[AnnotatedGenotype]]) = m.mapValues(selectDelegate)
-//      def collapseFlat(m: Map[Category, Iterable[AnnotatedGenotype]]) = flattenWithKey(m)
-
+      
       genotypesByCategory.flatMap(flattenWithKey)
   }
 
