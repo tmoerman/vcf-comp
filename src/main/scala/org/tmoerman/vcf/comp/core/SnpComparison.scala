@@ -117,7 +117,7 @@ object SnpComparison extends Serializable with Logging {
           .map(dropKey)                                                     // coGroup:             (Iterable[AnnotatedGenotype], Iterable[AnnotatedGenotype])
           .map(categorize(A = labelA, B = labelB, unifyConcordant = unify)) // categorized:         Map[Category, Map[BaseChange, Iterable[AnnotatedGenotype]]]
           .map(_.mapValues(_.mapValues(_.maxBy(quality)).values))           // max Q by BaseChange: Map[Category, Iterable[AnnotatedGenotype]]
-      
+
       genotypesByCategory.flatMap(flattenWithKey)
   }
 

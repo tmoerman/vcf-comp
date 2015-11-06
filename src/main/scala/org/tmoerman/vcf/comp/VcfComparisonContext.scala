@@ -1,6 +1,7 @@
 package org.tmoerman.vcf.comp
 
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.rich.RichVariant
 import org.tmoerman.adam.fx.avro.AnnotatedGenotype
 import org.tmoerman.adam.fx.snpeff.SnpEffContext._
 import org.apache.spark.{SparkContext, Logging}
@@ -14,8 +15,6 @@ import SnpComparison._
 object VcfComparisonContext {
 
   implicit def toVcfComparisonContext(sc: SparkContext): VcfComparisonContext = new VcfComparisonContext(sc)
-
-  // implicit def pimpRichVariantRDD(rdd: RDD[RichVariant]): RichVariantRDDFunctions = ??? TODO complete
 
   implicit def pimpSnpComparisonRDD(rdd: RDD[(Category, AnnotatedGenotype)]) : SnpComparisonRDDFunctions = new SnpComparisonRDDFunctions(rdd)
 

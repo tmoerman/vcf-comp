@@ -9,25 +9,12 @@ import org.tmoerman.vcf.comp.core.Model._
  */
 object VcfStatistics {
 
-  def countVariantTypes(variants: RDD[Variant]): Map[VariantType, Count] =
+  def variantTypeCount(variants: RDD[Variant]): Map[VariantType, Count] =
     variants
       .map(variantType)
       .countByValue
       .toMap
 
-  def countBaseChanges(variants: RDD[Variant]): Map[BaseChange, Count] =
-    variants
-      .filter(isSnp)
-      .map(baseChange)
-      .countByValue
-      .toMap
-
-  def countMutationPatterns(variants: RDD[Variant]): Map[BaseChangePattern, Count] =
-    variants
-      .filter(isSnp)
-      .map(baseChange)
-      .map(baseChangePattern)
-      .countByValue
-      .toMap
+  def multiAllelicRegionCount(variants: RDD[Variant]) = ??? // TODO implement
 
 }
