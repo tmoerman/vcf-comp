@@ -2,6 +2,8 @@ package org.tmoerman.vcf.comp.util
 
 import java.io.{BufferedWriter, FileWriter, File}
 
+import org.tmoerman.vcf.comp.core.Model.ProjectionCount
+
 import scala.math.BigDecimal.RoundingMode.HALF_UP
 import scala.reflect.ClassTag
 
@@ -23,8 +25,8 @@ object Victorinox {
   def flattenWithKey[K, A](m: Map[K, Iterable[A]]): Iterable[(K, A)] =
     m.flatMap{ case (k, it) => it.map(a => (k, a))}
 
-  def toCSV[A, B, C](h: List[String], m: Map[(A, B), C]): String =
-    h.mkString("\t") + "\n" + m.toList.map{ case ((a, b), c) => s"$a\t$b\t$c" }.sorted.mkString("\n")
+  def toCSV[A, B, C](h: List[String], m: Iterable[ProjectionCount]): String =
+    h.mkString("\t") + "\n" + m.toList.map{ case ProjectionCount(a, b, c) => s"$a\t$b\t$c" }.sorted.mkString("\n")
 
   def write(fileName: String, content: String): Unit = {
     val file = new File(fileName)

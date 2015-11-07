@@ -9,17 +9,17 @@ import org.tmoerman.vcf.comp.core.SnpComparison._
 
 class SnpComparisonRDDFunctions(val rdd: RDD[(Category, AnnotatedGenotype)]) extends Serializable with Logging {
 
-  // This delegate selection strategy should be compared to simply flattening the data structure
-
-  def categoryCount =
+  def categoryCount: Iterable[CategoryCount] =
     rdd
       .map{ case (cat, _) => name(cat) }
       .countByValue
-      .toMap
+      .map{ case (cat, count) => CategoryCount(cat, count) }
 
   def baseChangeCount = countByCategory(baseChangeString)
 
   def baseChangesPatternCount = countByCategory(baseChangePatternString)
+
+  def baseChangeTypeCount = countByCategory(baseChangeType)
 
   // TODO sensible default binning strategy
 
@@ -37,12 +37,12 @@ class SnpComparisonRDDFunctions(val rdd: RDD[(Category, AnnotatedGenotype)]) ext
 
   def commonSnpRatio = countByCategory(hasDbSnpAnnotations(_))
 
-  def countByCategory[P](projection: AnnotatedGenotype => P): Map[(String, P), Count] =
+  def countByCategory[P](projection: AnnotatedGenotype => P): Iterable[ProjectionCount] =
     rdd
       .map{ case (cat, rep) => (name(cat), rep) }
       .mapValues(projection)
       .countByValue
-      .toMap
+      .map{ case ((cat, p), count) => ProjectionCount(cat, p.toString, count) }
 
   // TODO (perhaps not here: multiallelic site statistic)
 

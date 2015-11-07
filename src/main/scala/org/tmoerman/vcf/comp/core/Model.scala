@@ -3,8 +3,8 @@ package org.tmoerman.vcf.comp.core
 import org.bdgenomics.adam.rich.RichGenotype._
 import org.bdgenomics.adam.rich.RichVariant._
 import org.bdgenomics.formats.avro.GenotypeAllele.{Alt, Ref}
-import org.bdgenomics.formats.avro.{GenotypeType, GenotypeAllele, Variant}
-import org.tmoerman.adam.fx.avro.{Impact, AnnotatedGenotype}
+import org.bdgenomics.formats.avro.{Variant}
+import org.tmoerman.adam.fx.avro.{AnnotatedGenotype}
 import org.tmoerman.adam.fx.snpeff.model.RichAnnotatedGenotype
 import scala.collection.JavaConversions._
 
@@ -16,6 +16,7 @@ import scala.util.Try
 object Model extends Serializable {
 
   type Base  = String
+  type Label = String
   type Count = Long
 
   // ALLELE FREQUENCY
@@ -114,6 +115,8 @@ object Model extends Serializable {
 
   def baseChangeType(v: Variant): BaseChangeType = trySNP(v).map(baseChange).map(baseChangeType).get
 
+  def baseChangeType(genotype: AnnotatedGenotype): BaseChangeType = baseChangeType(genotype.getGenotype.getVariant)
+
   // SNP
 
   def isSnp(genotype: AnnotatedGenotype): Boolean = isSnp(genotype.getGenotype.getVariant)
@@ -152,5 +155,17 @@ object Model extends Serializable {
   def hasSnpEffAnnotations(r: RichAnnotatedGenotype)  = r.annotations.exists(a => a.functionalAnnotations.nonEmpty ||
                                                                                   a.nonsenseMediatedDecay.nonEmpty ||
                                                                                   a.lossOfFunction.nonEmpty)
+
+  // Value Holders TODO perhaps move this to separate namespace?
+
+  case class SnpComparisonParams(matchOnSampleId: Boolean = false,
+                                 unifyConcordant: Boolean = true,
+                                 labels:     (Label, Label)         = ("A", "B"),
+                                 qualities:  (Quality, Quality)     = (0, 0),
+                                 readDepths: (ReadDepth, ReadDepth) = (1, 1))
+
+  case class CategoryCount(category: String, count: Count)
+
+  case class ProjectionCount(category: String, projection: String, count: Count)
 
 }

@@ -35,8 +35,6 @@ object SnpComparison extends Serializable with Logging {
 
   // CATEGORY
 
-  type Label = String
-
   type Occurrence = String
 
   val UNIQUE     = "unique"
@@ -93,17 +91,11 @@ object SnpComparison extends Serializable with Logging {
         concordant ++ discordant
     }
 
-  case class VcfComparisonParams(matchOnSampleId: Boolean = false,
-                                 unifyConcordant: Boolean = true,
-                                 labels:     (Label, Label)         = ("A", "B"),
-                                 qualities:  (Quality, Quality)     = (0, 0),
-                                 readDepths: (ReadDepth, ReadDepth) = (1, 1))
-
-  def compareSnps(params: VcfComparisonParams = new VcfComparisonParams())
+  def compareSnps(params: SnpComparisonParams = new SnpComparisonParams())
                  (rddA: RDD[AnnotatedGenotype],
                   rddB: RDD[AnnotatedGenotype]): RDD[(Category, AnnotatedGenotype)] = params match {
 
-    case VcfComparisonParams(matchOnSampleId, unify, (labelA, labelB), (qA, qB), (rdA, rdB)) =>
+    case SnpComparisonParams(matchOnSampleId, unify, (labelA, labelB), (qA, qB), (rdA, rdB)) =>
 
       def prep(q: Quality, rd: ReadDepth, rdd: RDD[AnnotatedGenotype]): RDD[(VariantKey, AnnotatedGenotype)] =
         rdd

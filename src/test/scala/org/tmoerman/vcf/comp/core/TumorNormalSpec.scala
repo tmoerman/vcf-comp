@@ -7,6 +7,7 @@ import org.tmoerman.test.spark.BaseSparkContextSpec
 import org.tmoerman.vcf.comp.VcfComparisonContext._
 import SnpComparison._
 import Model._
+import org.tmoerman.vcf.comp.core.Model.CategoryCount
 
 import org.tmoerman.vcf.comp.util.Victorinox._
 
@@ -16,18 +17,21 @@ import org.tmoerman.vcf.comp.util.Victorinox._
 class TumorNormalSpec extends BaseSparkContextSpec {
 
   val wd = "/Users/tmo/Work/exascience/data/VCF-comp/tumor.normal/"
-  val out = wd + "report.v2/"
+  val out = wd + "report.v3/"
 
   new File(out).mkdir()
 
   val tumor  = wd + "4146_T.vcf.gz.annotated.gz"
   val normal = wd + "4146_N.vcf.gz.annotated.gz"
 
-  val rdd = sc.startSnpComparison(tumor, normal).cache()
+  val params = new SnpComparisonParams(unifyConcordant = true,
+                                       labels = ("TUMOR", "NORMAL"))
+
+  val rdd = sc.startSnpComparison(tumor, normal, params).cache()
 
   "export snpCount" should "succeed" in {
     val snpCount = rdd.categoryCount
-    val s = s"category\tcount\n" + snpCount.map{ case (cat, count) => s"$cat\t$count" }.mkString("\n")
+    val s = s"category\tcount\n" + snpCount.map{ case CategoryCount(cat, count) => s"$cat\t$count" }.mkString("\n")
 
     write(out + "snpCount.txt", s)
   }

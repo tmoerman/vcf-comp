@@ -45,7 +45,7 @@ class VcfComparisonContext(val sc: SparkContext) extends Serializable with Loggi
    */
   def startSnpComparison(vcfFileA: String,
                          vcfFileB: String,
-                         params: VcfComparisonParams = new VcfComparisonParams()): RDD[(Category, AnnotatedGenotype)] = {
+                         params: SnpComparisonParams = new SnpComparisonParams()): RDD[(Category, AnnotatedGenotype)] = {
 
     val aRDD = sc.loadAnnotatedGenotypes(vcfFileA)
     val bRDD = sc.loadAnnotatedGenotypes(vcfFileB)
