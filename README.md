@@ -14,7 +14,7 @@ Artifacts are published to [Bintray](https://bintray.com/tmoerman/maven/vcf-comp
 ```sbt
 resolvers += "bintray-tmoerman" at "http://dl.bintray.com/tmoerman/maven"`
 
-libraryDependencies += "org.tmoerman" %% "vcf-comp" % "0.2.1"
+libraryDependencies += "org.tmoerman" %% "vcf-comp" % "0.2.2"
 ```
 
 ##### Spark Notebook
@@ -22,7 +22,7 @@ libraryDependencies += "org.tmoerman" %% "vcf-comp" % "0.2.1"
 ```
 :remote-repo bintray-tmoerman % default % http://dl.bintray.com/tmoerman/maven % maven
 
-:dp org.tmoerman % vcf-comp_2.10 % 0.2.1
+:dp org.tmoerman % vcf-comp_2.10 % 0.2.2
 ```
 
 ##### Zeppelin
@@ -32,7 +32,7 @@ libraryDependencies += "org.tmoerman" %% "vcf-comp" % "0.2.1"
 
 z.addRepo("bintray-tmoerman").url("http://dl.bintray.com/tmoerman/maven")
 
-z.load("org.tmoerman:vcf-comp_2.10:0.2.1")
+z.load("org.tmoerman:vcf-comp_2.10:0.2.2")
 ```
 
 ## Usage
