@@ -14,7 +14,7 @@ Artifacts are published to [Bintray](https://bintray.com/tmoerman/maven/vcf-comp
 ```sbt
 resolvers += "bintray-tmoerman" at "http://dl.bintray.com/tmoerman/maven"`
 
-libraryDependencies += "org.tmoerman" %% "vcf-comp" % "0.2.3"
+libraryDependencies += "org.tmoerman" %% "vcf-comp" % "0.2.4"
 ```
 
 ##### Spark Notebook
@@ -22,7 +22,7 @@ libraryDependencies += "org.tmoerman" %% "vcf-comp" % "0.2.3"
 ```
 :remote-repo bintray-tmoerman % default % http://dl.bintray.com/tmoerman/maven % maven
 
-:dp org.tmoerman % vcf-comp_2.10 % 0.2.3
+:dp org.tmoerman % vcf-comp_2.10 % 0.2.4
 ```
 
 ##### Zeppelin
@@ -32,7 +32,7 @@ libraryDependencies += "org.tmoerman" %% "vcf-comp" % "0.2.3"
 
 z.addRepo("bintray-tmoerman").url("http://dl.bintray.com/tmoerman/maven")
 
-z.load("org.tmoerman:vcf-comp_2.10:0.2.3")
+z.load("org.tmoerman:vcf-comp_2.10:0.2.4")
 ```
 
 ## Usage
@@ -41,7 +41,7 @@ z.load("org.tmoerman:vcf-comp_2.10:0.2.3")
 
 Vcf-comp uses the adam-fx `KryoRegistrator` that extends the `ADAMKryoRegistrator` with additional Avro data types. Use it
 when initializing a `SparkConf`.
-      
+
 ```scala
 val conf = new SparkConf()
     .setAppName("Test")
