@@ -3,8 +3,9 @@ package org.tmoerman.vcf.comp.core
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.VariantContext
-import org.tmoerman.vcf.comp.core.Model.{Count, VariantType}
 import Model._
+
+import scala.reflect.ClassTag
 
 class QCRDDFunctions(val rdd: RDD[VariantContext]) extends Serializable with Logging {
 
@@ -14,19 +15,24 @@ class QCRDDFunctions(val rdd: RDD[VariantContext]) extends Serializable with Log
 
   def readDepthDistribution = countByProjections(_.genotypes.map(readDepth))
 
-  
+  def indelLengthDistribution =
+    rdd
+      .map(_.variant.variant)
+      .filter(isIndel)
+      .map(indelLength)
+      .toProjectionCount
 
-  def countByProjections[P](projection: VariantContext => Iterable[P]): Iterable[ProjectionCount[P]] =
+  def countByProjections[P: ClassTag](projection: VariantContext => Iterable[P]) =
     rdd
       .flatMap(projection)
       .toProjectionCount
 
-  def countByProjection[P](projection: VariantContext => P): Iterable[ProjectionCount[P]] =
+  def countByProjection[P: ClassTag](projection: VariantContext => P) =
     rdd
       .map(projection)
       .toProjectionCount
 
-
+  def multiAllelicRatio = rdd.map(_.genotypes.exists(fromMultiAllelic)).countByValue.toMap
 
   private implicit class ProjectionRDDFunctions[P](val ps: RDD[P]) {
 
@@ -37,10 +43,5 @@ class QCRDDFunctions(val rdd: RDD[VariantContext]) extends Serializable with Log
         .map{ case (v, c) => ProjectionCount(v, c) }
 
   }
-
-
-  //def qualityDistribution: Map[]
-
-  //  def multiAllelicRegionCount(variants: RDD[Variant]) = ??? // TODO implement
 
 }

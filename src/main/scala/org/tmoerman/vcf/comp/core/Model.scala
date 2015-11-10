@@ -27,6 +27,12 @@ object Model extends Serializable {
 
   def alleleFrequency(genotype: AnnotatedGenotype): AlleleFrequency = alleleFrequency(genotype.getGenotype)
 
+  // MULTI-ALLELIC
+
+  def nrAlleles(genotype: Genotype): Int = genotype.getAlleles.size()
+
+  def fromMultiAllelic(genotype: Genotype): Boolean = genotype.getSplitFromMultiAllelic
+
   // READ DEPTH
 
   type ReadDepth = Int
@@ -65,6 +71,12 @@ object Model extends Serializable {
     else                                    OTHER
 
   def variantType(genotype: AnnotatedGenotype): VariantType = variantType(genotype.getGenotype.getVariant)
+
+  // INDEL LENGTH
+
+  def isIndel(v: Variant) = v.isInsertion() || v.isDeletion()
+
+  def indelLength(v: Variant): Int = v.getReferenceAllele.length - v.getAlternateAllele.length
 
   // BASE TYPE
 
@@ -144,7 +156,7 @@ object Model extends Serializable {
     case _                => NO_CALL
   }
 
-  // Functional annotations
+  // FUNCTIONAL ANNOTATIONS
 
   val NA = "N/A"
 
