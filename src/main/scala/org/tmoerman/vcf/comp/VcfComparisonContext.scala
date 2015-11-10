@@ -1,13 +1,15 @@
 package org.tmoerman.vcf.comp
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.rich.RichVariant
+import org.bdgenomics.adam.models.VariantContext
 import org.tmoerman.adam.fx.avro.AnnotatedGenotype
 import org.tmoerman.adam.fx.snpeff.SnpEffContext._
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.apache.spark.{SparkContext, Logging}
 import org.tmoerman.vcf.comp.core.Model._
-import org.tmoerman.vcf.comp.core.{SnpComparisonRDDFunctions, SnpComparison}
+import org.tmoerman.vcf.comp.core.{QCRDDFunctions, SnpComparisonRDDFunctions, SnpComparison, QC}
 import SnpComparison._
+import QC._
 
 /**
  * @author Thomas Moerman
@@ -16,7 +18,9 @@ object VcfComparisonContext {
 
   implicit def toVcfComparisonContext(sc: SparkContext): VcfComparisonContext = new VcfComparisonContext(sc)
 
-  implicit def pimpSnpComparisonRDD(rdd: RDD[(Category, AnnotatedGenotype)]) : SnpComparisonRDDFunctions = new SnpComparisonRDDFunctions(rdd)
+  implicit def pimpQCRDD(rdd: RDD[VariantContext]): QCRDDFunctions = new QCRDDFunctions(rdd)
+
+  implicit def pimpSnpComparisonRDD(rdd: RDD[(Category, AnnotatedGenotype)]): SnpComparisonRDDFunctions = new SnpComparisonRDDFunctions(rdd)
 
 }
 
@@ -26,17 +30,20 @@ class VcfComparisonContext(val sc: SparkContext) extends Serializable with Loggi
    * @param vcfFile Name of the VCF file.
    * @return Returns a multimap of Strings representing the meta information of the VCF file.
    */
-  def getMetaFields(vcfFile: String): Map[String, List[String]] =
-    sc
-      .textFile(vcfFile)
-      .toLocalIterator
-      .toList
-      .takeWhile(line => line.startsWith("##"))
-      .map(_.drop(2).split("=", 2) match { case Array(l, r, _*) => (l, r) })
-      .groupBy(_._1)
-      .mapValues(_.map(_._2))
+  def getMetaFields(vcfFile: String): Map[String, List[String]] = meta(sc.textFile(vcfFile))
 
-      //.foldLeft(Map[String, List[String]]()){ case (m, (k, v)) => m + (k -> m.get(k).map(v :: _).getOrElse(v :: Nil)) }
+  /**
+    * @param vcfFile
+    * @param params
+    * @return Returns an RDD that acts as the basis for the Quality Control analysis.
+    */
+  def startQC(vcfFile: String,
+              params: VcfQCParams = new VcfQCParams()): RDD[VariantContext] = {
+
+    val rdd = sc.loadGenotypes(vcfFile)
+
+    prep(params)(rdd)
+  }
 
   /**
    * @param vcfFileA
