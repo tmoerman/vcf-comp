@@ -3,7 +3,7 @@ package org.tmoerman.vcf.comp.core
 import org.bdgenomics.adam.rich.RichGenotype._
 import org.bdgenomics.adam.rich.RichVariant._
 import org.bdgenomics.formats.avro.GenotypeAllele.{Alt, Ref}
-import org.bdgenomics.formats.avro.Variant
+import org.bdgenomics.formats.avro.{Genotype, Variant}
 import org.tmoerman.adam.fx.avro.AnnotatedGenotype
 import org.tmoerman.adam.fx.snpeff.model.RichAnnotatedGenotype
 import scala.collection.JavaConversions._
@@ -23,20 +23,25 @@ object Model extends Serializable {
 
   type AlleleFrequency = Double
 
-  def alleleFrequency(genotype: AnnotatedGenotype): AlleleFrequency =
-    genotype.getGenotype.getAlternateReadDepth.toDouble / genotype.getGenotype.getReadDepth
+  def alleleFrequency(genotype: Genotype): AlleleFrequency = genotype.getAlternateReadDepth.toDouble / genotype.getReadDepth
+
+  def alleleFrequency(genotype: AnnotatedGenotype): AlleleFrequency = alleleFrequency(genotype.getGenotype)
 
   // READ DEPTH
 
   type ReadDepth = Int
 
-  def readDepth(genotype: AnnotatedGenotype): ReadDepth = genotype.getGenotype.getReadDepth
+  def readDepth(genotype: Genotype): ReadDepth = genotype.getReadDepth
+
+  def readDepth(genotype: AnnotatedGenotype): ReadDepth = readDepth(genotype.getGenotype)
 
   // QUALITY
 
   type Quality = Double
 
-  def quality(genotype: AnnotatedGenotype): Quality = genotype.getGenotype.getVariantCallingAnnotations.getVariantCallErrorProbability.toDouble
+  def quality(genotype: Genotype): Quality = genotype.getVariantCallingAnnotations.getVariantCallErrorProbability.toDouble
+
+  def quality(genotype: AnnotatedGenotype): Quality = quality(genotype.getGenotype)
 
   // SNP
 
@@ -166,6 +171,10 @@ object Model extends Serializable {
 
   // Value Holders TODO perhaps move this to separate namespace?
 
+  case class VcfQCParams(label:     Label = "X",
+                         quality:   Quality = 0,
+                         readDepth: ReadDepth = 0)
+
   case class SnpComparisonParams(matchOnSampleId: Boolean = false,
                                  unifyConcordant: Boolean = true,
                                  labels:     (Label, Label)         = ("A", "B"),
@@ -174,7 +183,9 @@ object Model extends Serializable {
 
   case class CategoryCount(category: String, count: Count)
 
-  case class ProjectionCount(category: String, projection: String, count: Count)
+  case class ProjectionCount[P](projection: P, count: Count)
+
+  case class CategoryProjectionCount[P](category: String, projection: P, count: Count)
 
   // Quantize
 
