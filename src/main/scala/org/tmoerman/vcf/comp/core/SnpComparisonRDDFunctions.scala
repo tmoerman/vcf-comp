@@ -9,33 +9,40 @@ import org.tmoerman.vcf.comp.core.SnpComparison._
 
 class SnpComparisonRDDFunctions(val rdd: RDD[(Category, AnnotatedGenotype)]) extends Serializable with Logging {
 
+  def filter(occurrences: Occurrence*): RDD[(Category, AnnotatedGenotype)] =
+    rdd
+      .filter{ case ((_, occurrence), _) => occurrences.contains(occurrence) ||
+                                            occurrences.map(_.toLowerCase).contains(occurrence.toLowerCase) }
+
   def categoryCount: Iterable[CategoryCount] =
     rdd
       .map{ case (cat, _) => name(cat) }
       .countByValue
       .map{ case (cat, count) => CategoryCount(cat, count) }
 
-  def baseChangeCount = countByCategory(baseChangeString)
+  def baseChangeCount           = countByCategory(baseChangeString)
 
-  def baseChangesPatternCount = countByCategory(baseChangePatternString)
+  def baseChangePatternCount    = countByCategory(baseChangePatternString)
 
-  def baseChangeTypeCount = countByCategory(baseChangeType)
+  def baseChangeTypeCount       = countByCategory(baseChangeType)
 
-  // TODO sensible default binning strategy
+  def zygosityCount             = countByCategory(zygosity)
 
-  def readDepthCount(bin: Int => Int = identity) = countByCategory(readDepth _ andThen bin)
+  def functionalImpactCount     = countByCategory(functionalImpact)
 
-  def qualityCount(bin: Double => Double = identity) = countByCategory(quality _ andThen bin)
+  def functionalAnnotationCount = countByCategory(functionalAnnotation)
 
-  def alleleFrequencyCount(bin: Double => Double = identity) = countByCategory(alleleFrequency _ andThen bin)
+  def transcriptBiotypeCount    = countByCategory(transcriptBiotype)
 
-  def zygosityCount = countByCategory(zygosity)
+  def clinvarRatio              = countByCategory(hasClinvarAnnotations(_))
 
-  def functionalImpactCount = countByCategory(functionalImpact)
+  def commonSnpRatio            = countByCategory(hasDbSnpAnnotations(_))
 
-  def clinvarRatio = countByCategory(hasClinvarAnnotations(_))
+  def readDepthCount      (bin:    Int => Double = identity)      = countByCategory(readDepth _ andThen bin)
 
-  def commonSnpRatio = countByCategory(hasDbSnpAnnotations(_))
+  def qualityCount        (bin: Double => Double = quantize(25))  = countByCategory(quality _ andThen bin)
+
+  def alleleFrequencyCount(bin: Double => Double = quantize(.01)) = countByCategory(alleleFrequency _ andThen bin)
 
   def countByCategory[P](projection: AnnotatedGenotype => P): Iterable[ProjectionCount] =
     rdd
