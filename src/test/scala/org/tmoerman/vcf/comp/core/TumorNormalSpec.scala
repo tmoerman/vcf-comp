@@ -29,6 +29,10 @@ class TumorNormalSpec extends BaseSparkContextSpec {
 
   val rdd = sc.startSnpComparison(tumor, normal, params).cache()
 
+  "filtering by occurrence" should "compile" in {
+    val uniqueAndConcordant = rdd.filter(CONCORDANT, UNIQUE).baseChangePatternCount
+  }
+
   "export snpCount" should "succeed" in {
     val snpCount = rdd.categoryCount
     val s = s"category\tcount\n" + snpCount.map{ case CategoryCount(cat, count) => s"$cat\t$count" }.mkString("\n")
@@ -42,7 +46,7 @@ class TumorNormalSpec extends BaseSparkContextSpec {
   }
 
   "export base change pattern" should "succeed" in {
-    val s = toCSV(List("category", "base change pattern", "count"), rdd.baseChangesPatternCount)
+    val s = toCSV(List("category", "base change pattern", "count"), rdd.baseChangePatternCount)
     write(out + "snpBaseChangePatternCount.txt", s)
   }
 
