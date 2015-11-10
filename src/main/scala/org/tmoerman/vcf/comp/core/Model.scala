@@ -150,7 +150,7 @@ object Model extends Serializable {
     genotype.getAnnotations.getFunctionalAnnotations.map(_.getAnnotations.head).headOption.getOrElse(NA)
 
   def transcriptBiotype(genotype: AnnotatedGenotype): String =
-    genotype.getAnnotations.getFunctionalAnnotations.map(_.getTranscriptBiotype).headOption.getOrElse(NA)
+    genotype.getAnnotations.getFunctionalAnnotations.flatMap(e => Option(e.getTranscriptBiotype)).headOption.getOrElse(NA)
 
   // TODO synonymous / non-synonymous count
 

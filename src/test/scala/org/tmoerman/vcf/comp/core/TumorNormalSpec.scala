@@ -80,6 +80,12 @@ class TumorNormalSpec extends BaseSparkContextSpec {
     write(out + "functionalImpactCount.txt", s)
   }
 
+  "export transcript biotype count" should "succeed" in {
+    val s = toCSV(List("category", "biotype", "count"), rdd.transcriptBiotypeCount)
+
+    //write(out + "transcript biotype count.txt", s)
+  }
+
 //  "exporting the entire data set" should "succeed" in {
 //    val headers = List(
 //      "sample_id",
