@@ -9,7 +9,7 @@ import org.tmoerman.vcf.comp.core.SnpComparison._
 
 class SnpComparisonRDDFunctions(val rdd: RDD[(Category, AnnotatedGenotype)]) extends Serializable with Logging {
 
-  def filter(occurrences: Occurrence*): RDD[(Category, AnnotatedGenotype)] =
+  def viewOnly(occurrences: Occurrence*): RDD[(Category, AnnotatedGenotype)] =
     rdd
       .filter{ case ((_, occurrence), _) => occurrences.contains(occurrence) ||
                                             occurrences.map(_.toLowerCase).contains(occurrence.toLowerCase) }
@@ -38,18 +38,18 @@ class SnpComparisonRDDFunctions(val rdd: RDD[(Category, AnnotatedGenotype)]) ext
 
   def commonSnpRatio            = countByProjection(hasDbSnpAnnotations(_))
 
-  def readDepthCount      (bin:    Int => Double = identity)      = countByProjection(readDepth _ andThen bin)
+  def readDepthDistribution(bin: ReadDepth => Double = identity) = countByProjection[Double](g => bin(readDepth(g)))
 
-  def qualityCount        (bin: Double => Double = quantize(25))  = countByProjection(quality _ andThen bin)
+  def qualityDistribution(bin: Double => Double = quantize(25)) = countByProjection[Quality](g => bin(quality(g)))
 
-  def alleleFrequencyCount(bin: Double => Double = quantize(.01)) = countByProjection(alleleFrequency _ andThen bin)
+  def alleleFrequencyDistribution(bin: Double => Double = quantize(.01)) = countByProjection[AlleleFrequency](g => bin(alleleFrequency(g)))
 
-  def countByProjection[P](projection: AnnotatedGenotype => P): Iterable[ProjectionCount] =
+  def countByProjection[P](projection: AnnotatedGenotype => P): Iterable[CategoryProjectionCount[P]] =
     rdd
       .map{ case (cat, rep) => (name(cat), rep) }
       .mapValues(projection)
       .countByValue
-      .map{ case ((cat, p), count) => ProjectionCount(cat, p.toString, count) }
+      .map{ case ((cat, p), count) => CategoryProjectionCount(cat, p, count) }
 
   // TODO (perhaps not here: multiallelic site statistic)
 
