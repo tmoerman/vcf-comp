@@ -30,7 +30,7 @@ class TumorNormalSpec extends BaseSparkContextSpec {
   val rdd = sc.startSnpComparison(tumor, normal, params).cache()
 
   "filtering by occurrence" should "compile" in {
-    val uniqueAndConcordant = rdd.filter(CONCORDANT, UNIQUE).baseChangePatternCount
+    val uniqueAndConcordant = rdd.viewOnly(CONCORDANT, UNIQUE).baseChangePatternCount
   }
 
   "export snpCount" should "succeed" in {
@@ -51,17 +51,17 @@ class TumorNormalSpec extends BaseSparkContextSpec {
   }
 
   "export read depth distribution" should "succeed" in {
-    val s = toCSV(List("category", "read depth", "count"), rdd.readDepthCount())
+    val s = toCSV(List("category", "read depth", "count"), rdd.readDepthDistribution())
     write(out + "snpReadDepthCount.txt", s)
   }
 
   "export quality distribution" should "succeed" in {
-    val s = toCSV(List("category", "quality", "count"), rdd.qualityCount(bin = roundToDecimals(1)))
+    val s = toCSV(List("category", "quality", "count"), rdd.qualityDistribution(bin = roundToDecimals(1)))
     write(out + "snpQualityCount.txt", s)
   }
 
   "export allele freq distribution" should "succeed" in {
-    val s = toCSV(List("category", "allele freq", "count"), rdd.alleleFrequencyCount(bin = roundToDecimals(1)))
+    val s = toCSV(List("category", "allele freq", "count"), rdd.alleleFrequencyDistribution(bin = roundToDecimals(1)))
     write(out + "snpAlleleFrequencyCount.txt", s)
   }
 
