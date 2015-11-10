@@ -20,31 +20,31 @@ class SnpComparisonRDDFunctions(val rdd: RDD[(Category, AnnotatedGenotype)]) ext
       .countByValue
       .map{ case (cat, count) => CategoryCount(cat, count) }
 
-  def baseChangeCount           = countByCategory(baseChangeString)
+  def baseChangeCount           = countByProjection(baseChangeString)
 
-  def baseChangePatternCount    = countByCategory(baseChangePatternString)
+  def baseChangePatternCount    = countByProjection(baseChangePatternString)
 
-  def baseChangeTypeCount       = countByCategory(baseChangeType)
+  def baseChangeTypeCount       = countByProjection(baseChangeType)
 
-  def zygosityCount             = countByCategory(zygosity)
+  def zygosityCount             = countByProjection(zygosity)
 
-  def functionalImpactCount     = countByCategory(functionalImpact)
+  def functionalImpactCount     = countByProjection(functionalImpact)
 
-  def functionalAnnotationCount = countByCategory(functionalAnnotation)
+  def functionalAnnotationCount = countByProjection(functionalAnnotation)
 
-  def transcriptBiotypeCount    = countByCategory(transcriptBiotype)
+  def transcriptBiotypeCount    = countByProjection(transcriptBiotype)
 
-  def clinvarRatio              = countByCategory(hasClinvarAnnotations(_))
+  def clinvarRatio              = countByProjection(hasClinvarAnnotations(_))
 
-  def commonSnpRatio            = countByCategory(hasDbSnpAnnotations(_))
+  def commonSnpRatio            = countByProjection(hasDbSnpAnnotations(_))
 
-  def readDepthCount      (bin:    Int => Double = identity)      = countByCategory(readDepth _ andThen bin)
+  def readDepthCount      (bin:    Int => Double = identity)      = countByProjection(readDepth _ andThen bin)
 
-  def qualityCount        (bin: Double => Double = quantize(25))  = countByCategory(quality _ andThen bin)
+  def qualityCount        (bin: Double => Double = quantize(25))  = countByProjection(quality _ andThen bin)
 
-  def alleleFrequencyCount(bin: Double => Double = quantize(.01)) = countByCategory(alleleFrequency _ andThen bin)
+  def alleleFrequencyCount(bin: Double => Double = quantize(.01)) = countByProjection(alleleFrequency _ andThen bin)
 
-  def countByCategory[P](projection: AnnotatedGenotype => P): Iterable[ProjectionCount] =
+  def countByProjection[P](projection: AnnotatedGenotype => P): Iterable[ProjectionCount] =
     rdd
       .map{ case (cat, rep) => (name(cat), rep) }
       .mapValues(projection)
