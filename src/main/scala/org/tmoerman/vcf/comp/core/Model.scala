@@ -3,8 +3,8 @@ package org.tmoerman.vcf.comp.core
 import org.bdgenomics.adam.rich.RichGenotype._
 import org.bdgenomics.adam.rich.RichVariant._
 import org.bdgenomics.formats.avro.GenotypeAllele.{Alt, Ref}
-import org.bdgenomics.formats.avro.{Variant}
-import org.tmoerman.adam.fx.avro.{AnnotatedGenotype}
+import org.bdgenomics.formats.avro.Variant
+import org.tmoerman.adam.fx.avro.AnnotatedGenotype
 import org.tmoerman.adam.fx.snpeff.model.RichAnnotatedGenotype
 import scala.collection.JavaConversions._
 
@@ -139,10 +139,18 @@ object Model extends Serializable {
     case _                => NO_CALL
   }
 
-  // IMPACT
+  // Functional annotations
+
+  val NA = "N/A"
 
   def functionalImpact(genotype: AnnotatedGenotype): String =
-    genotype.getAnnotations.getFunctionalAnnotations.map(_.getImpact).sorted.headOption.map(_.toString).getOrElse("NONE")
+    genotype.getAnnotations.getFunctionalAnnotations.map(_.getImpact).sorted.headOption.map(_.toString).getOrElse(NA)
+
+  def functionalAnnotation(genotype: AnnotatedGenotype): String =
+    genotype.getAnnotations.getFunctionalAnnotations.map(_.getAnnotations.head).headOption.getOrElse(NA)
+
+  def transcriptBiotype(genotype: AnnotatedGenotype): String =
+    genotype.getAnnotations.getFunctionalAnnotations.map(_.getTranscriptBiotype).headOption.getOrElse(NA)
 
   // TODO synonymous / non-synonymous count
 
@@ -167,5 +175,11 @@ object Model extends Serializable {
   case class CategoryCount(category: String, count: Count)
 
   case class ProjectionCount(category: String, projection: String, count: Count)
+
+  // Quantize
+
+  def quantize(step: Int)(value: Int): Int = value - (value % step) + (step / 2)
+
+  def quantize(step: Double)(value: Double): Double = value - (value % step) + (step.toDouble / 2)
 
 }
