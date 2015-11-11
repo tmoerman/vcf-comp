@@ -19,8 +19,8 @@ class ScalazSpec extends FlatSpec {
   }
 
   "semigroup magic" should "bla" in {
-    val a = Map(("a") -> Map(1 -> 11), ("b") -> Map(2 -> 22))
-    val b = Map(("a") -> Map(5 -> 55), ("c") -> Map(3 -> 33))
+    val a = Map("a" -> Map(1 -> 11), "b" -> Map(2 -> 22))
+    val b = Map("a" -> Map(5 -> 55), "c" -> Map(3 -> 33))
 
     val r = List(a, b).reduce(_ |+| _)
 

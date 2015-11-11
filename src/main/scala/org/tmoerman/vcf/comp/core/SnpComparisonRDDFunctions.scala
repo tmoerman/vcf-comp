@@ -38,9 +38,9 @@ class SnpComparisonRDDFunctions(val rdd: RDD[(Category, AnnotatedGenotype)]) ext
 
   def commonSnpRatio            = countByProjection(hasDbSnpAnnotations(_))
 
-  def readDepthDistribution(bin: ReadDepth => Double = identity) = countByProjection[Double](g => bin(readDepth(g)))
+  def readDepthDistribution      (bin: ReadDepth => Double = identity)   = countByProjection[Double](g => bin(readDepth(g)))
 
-  def qualityDistribution(bin: Double => Double = quantize(25)) = countByProjection[Quality](g => bin(quality(g)))
+  def qualityDistribution        (bin: Double => Double = quantize(25))  = countByProjection[Quality](g => bin(quality(g)))
 
   def alleleFrequencyDistribution(bin: Double => Double = quantize(.01)) = countByProjection[AlleleFrequency](g => bin(alleleFrequency(g)))
 
@@ -50,8 +50,6 @@ class SnpComparisonRDDFunctions(val rdd: RDD[(Category, AnnotatedGenotype)]) ext
       .mapValues(projection)
       .countByValue
       .map{ case ((cat, p), count) => CategoryProjectionCount(cat, p, count) }
-
-  // TODO (perhaps not here: multiallelic site statistic)
 
   /**
    * @return Returns a help String.
