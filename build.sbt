@@ -21,9 +21,11 @@ libraryDependencies ++= Seq(
   "org.bdgenomics.adam" % "adam-apis_2.10" % "0.17.+",
   "org.bdgenomics.bdg-formats" % "bdg-formats" % "0.4.0",
   "org.tmoerman" %% "adam-fx" % "0.5.3",
-  "org.scalatest" %% "scalatest" % "2.2.4" % "test",
-  "org.scalaz" %% "scalaz-core" % "7.1.4"
+  "org.scalaz" %% "scalaz-core" % "7.0.6",
+  "org.scalatest" %% "scalatest" % "2.2.4" % "test"
 )
+
+ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) }
 
 fork in run := true
 
