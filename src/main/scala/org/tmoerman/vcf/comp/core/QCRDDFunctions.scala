@@ -11,9 +11,9 @@ class QCRDDFunctions(val rdd: RDD[VariantContext]) extends Serializable with Log
 
   def variantTypeCount      = countByProjection(v => variantType(v.variant.variant))
 
-  def qualityDistribution   = countByProjections(_.genotypes.map(quality))
+  def readDepthDistribution(bin: ReadDepth => Double = identity)  = countByProjections(_.genotypes.map(g => bin(readDepth(g))))
 
-  def readDepthDistribution = countByProjections(_.genotypes.map(readDepth))
+  def qualityDistribution  (bin: Double => Double = quantize(25)) = countByProjections(_.genotypes.map(g => bin(quality(g))))
 
   def multiAllelicRatio     = countByProjection(_.genotypes.exists(fromMultiAllelic))
 
