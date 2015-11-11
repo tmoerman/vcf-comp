@@ -86,6 +86,21 @@ class TumorNormalSpec extends BaseSparkContextSpec {
     //write(out + "transcript biotype count.txt", s)
   }
 
+
+  val tumorQCparams = new VcfQCParams(label = "TUMOR")
+
+  val tumorQCrdd = sc.startQC(tumor, tumorQCparams)
+
+  "QC variant types" should "succeed" in {
+    val variantTypes = tumorQCrdd.variantTypeCount
+
+    val multiAllelicRatio = tumorQCrdd.multiAllelicRatio
+
+    println(variantTypes, multiAllelicRatio)
+  }
+
+
+
 //  "exporting the entire data set" should "succeed" in {
 //    val headers = List(
 //      "sample_id",

@@ -2,9 +2,7 @@ package org.tmoerman.vcf.comp.core
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.VariantContext
-import org.bdgenomics.formats.avro.{Genotype, Variant}
 import org.tmoerman.vcf.comp.core.Model._
-import org.bdgenomics.adam.rdd.ADAMContext._
 
 /**
  * @author Thomas Moerman
@@ -21,13 +19,12 @@ object QC {
       .mapValues(_.map(_._2))
 
   def prep(params: VcfQCParams = new VcfQCParams())
-          (rdd: RDD[Genotype]): RDD[VariantContext] = params match {
+          (rdd: RDD[VariantContext]): RDD[VariantContext] = params match {
 
     case VcfQCParams(label, q, rd) =>
       rdd
-        .filter(quality(_) >= q)
-        .filter(readDepth(_) >= rd)
-        .toVariantContext
+        .filter(_.genotypes.forall(quality(_) >= q))
+        .filter(_.genotypes.forall(readDepth(_) >= q))
   }
 
 }

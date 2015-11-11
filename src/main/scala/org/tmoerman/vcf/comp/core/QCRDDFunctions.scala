@@ -9,11 +9,13 @@ import scala.reflect.ClassTag
 
 class QCRDDFunctions(val rdd: RDD[VariantContext]) extends Serializable with Logging {
 
-  def variantTypeCount = countByProjection(v => variantType(v.variant.variant))
+  def variantTypeCount      = countByProjection(v => variantType(v.variant.variant))
 
-  def qualityDistribution = countByProjections(_.genotypes.map(quality))
+  def qualityDistribution   = countByProjections(_.genotypes.map(quality))
 
   def readDepthDistribution = countByProjections(_.genotypes.map(readDepth))
+
+  def multiAllelicRatio     = countByProjection(_.genotypes.exists(fromMultiAllelic))
 
   def indelLengthDistribution =
     rdd
@@ -31,8 +33,6 @@ class QCRDDFunctions(val rdd: RDD[VariantContext]) extends Serializable with Log
     rdd
       .map(projection)
       .toProjectionCount
-
-  def multiAllelicRatio = rdd.map(_.genotypes.exists(fromMultiAllelic)).countByValue.toMap
 
   private implicit class ProjectionRDDFunctions[P](val ps: RDD[P]) {
 

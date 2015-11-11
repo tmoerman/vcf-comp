@@ -40,7 +40,7 @@ class VcfComparisonContext(val sc: SparkContext) extends Serializable with Loggi
   def startQC(vcfFile: String,
               params: VcfQCParams = new VcfQCParams()): RDD[VariantContext] = {
 
-    val rdd = sc.loadGenotypes(vcfFile)
+    val rdd = sc.loadVcf(vcfFile, None)
 
     prep(params)(rdd)
   }
