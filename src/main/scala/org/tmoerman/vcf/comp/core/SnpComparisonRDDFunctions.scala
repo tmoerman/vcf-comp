@@ -34,15 +34,15 @@ class SnpComparisonRDDFunctions(val rdd: RDD[(Category, AnnotatedGenotype)]) ext
 
   def transcriptBiotypeCount    = countByProjection(transcriptBiotype)
 
-  def clinvarRatio              = countByProjection(hasClinvarAnnotations(_))
+  def clinvarRatio               (name: Boolean => String = _.toString)  = countByProjection(g => name(hasClinvarAnnotations(g)))
 
-  def commonSnpRatio            = countByProjection(hasDbSnpAnnotations(_))
+  def commonSnpRatio             (name: Boolean => String = _.toString)  = countByProjection(g => name(hasDbSnpAnnotations(g)))
 
-  def readDepthDistribution      (bin: ReadDepth => Double = identity)   = countByProjection[Double](g => bin(readDepth(g)))
+  def readDepthDistribution      (bin: ReadDepth => Double = identity)   = countByProjection(g => bin(readDepth(g)))
 
-  def qualityDistribution        (bin: Double => Double = quantize(25))  = countByProjection[Quality](g => bin(quality(g)))
+  def qualityDistribution        (bin: Double => Double = quantize(25))  = countByProjection(g => bin(quality(g)))
 
-  def alleleFrequencyDistribution(bin: Double => Double = quantize(.01)) = countByProjection[AlleleFrequency](g => bin(alleleFrequency(g)))
+  def alleleFrequencyDistribution(bin: Double => Double = quantize(.01)) = countByProjection(g => bin(alleleFrequency(g)))
 
   def countByProjection[P](projection: AnnotatedGenotype => P): Iterable[CategoryProjectionCount[P]] =
     rdd
@@ -58,29 +58,5 @@ class SnpComparisonRDDFunctions(val rdd: RDD[(Category, AnnotatedGenotype)]) ext
     """
       | Documentation goes here.
     """.stripMargin
-
-  //  def withReadDepth(predicate: (ReadDepth) => Boolean) =
-  //    rdd.filter{ case (_, genotype) => predicate(readDepth(genotype)) }
-  //
-  //  def withQuality(predicate: (Quality) => Boolean)(entry: (Category, AnnotatedGenotype)): Boolean =
-  //    predicate(quality(entry._2))
-
-//  def enrich(labels: Labels): RDD[String] =
-//    rdd
-//      .map{ case (cat, rep) => {
-//
-//        List(
-//          rep.getGenotype.getSampleId,
-//          rep.getGenotype.getVariant.getContig.getContigName,
-//          rep.getGenotype.getVariant.getStart,
-//          labels.getOrElse(cat, cat),
-//          baseChangeString(rep),
-//          baseChangePatternString(rep),
-//          readDepth(rep),
-//          roundToDecimals(2)(quality(rep)),
-//          roundToDecimals(2)(alleleFrequency(rep)),
-//          hasClinvarAnnotations(rep),
-//          hasDbSnpAnnotations(rep)).mkString("\t") + "\n"
-//      }}
 
 }

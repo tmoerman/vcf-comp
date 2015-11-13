@@ -11,7 +11,7 @@ class QCRDDFunctions(val rdd: RDD[VariantContext]) extends Serializable with Log
 
   def variantTypeCount  = countByProjection(v => variantType(v.variant.variant))
 
-  def multiAllelicRatio = countByProjection(_.genotypes.exists(fromMultiAllelic))
+  def multiAllelicRatio    (name: Boolean => String = _.toString) = countByProjection(v => name(v.genotypes.exists(fromMultiAllelic)))
 
   def readDepthDistribution(bin: ReadDepth => Double = identity)  = countByProjections(_.genotypes.map(g => bin(readDepth(g))))
 
@@ -22,26 +22,19 @@ class QCRDDFunctions(val rdd: RDD[VariantContext]) extends Serializable with Log
       .map(_.variant.variant)
       .filter(isIndel)
       .map(indelLength)
-      .toProjectionCount
+      .countByValue
+      .map{ case (v, c) => ProjectionCount(v, c) }
 
   def countByProjections[P: ClassTag](projection: VariantContext => Iterable[P]) =
     rdd
       .flatMap(projection)
-      .toProjectionCount
+      .countByValue
+      .map{ case (v, c) => ProjectionCount(v, c) }
 
   def countByProjection[P: ClassTag](projection: VariantContext => P) =
     rdd
       .map(projection)
-      .toProjectionCount
-
-  private implicit class ProjectionRDDFunctions[P](val ps: RDD[P]) {
-
-    def toProjectionCount: Iterable[ProjectionCount[P]] =
-      ps
-        .countByValue
-        .toMap
-        .map{ case (v, c) => ProjectionCount(v, c) }
-
-  }
+      .countByValue
+      .map{ case (v, c) => ProjectionCount(v, c) }
 
 }
