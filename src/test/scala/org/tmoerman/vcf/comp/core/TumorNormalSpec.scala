@@ -58,7 +58,7 @@ class TumorNormalSpec extends BaseSparkContextSpec {
     rdd.clinvarRatio()
   }
 
-  "synonymous ratio" sould "succeed" in {
+  "synonymous ratio" should "succeed" in {
     rdd.synonymousRatio()
   }
 
