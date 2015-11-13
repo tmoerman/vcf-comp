@@ -66,12 +66,12 @@ class TumorNormalSpec extends BaseSparkContextSpec {
   }
 
   "export clinvar ratio" should "succeed" in {
-    val s = toCSV(List("category", "clinvar?", "count"), rdd.clinvarRatio)
+    val s = toCSV(List("category", "clinvar?", "count"), rdd.clinvarRatio(Map(true -> "clinvar", false -> "not clinvar")))
     write(out + "snpClinvarRatio.txt", s)
   }
 
   "export common SNP ratio" should "succeed" in {
-    val s = toCSV(List("category", "dbSNP?", "count"), rdd.commonSnpRatio)
+    val s = toCSV(List("category", "dbSNP?", "count"), rdd.commonSnpRatio(Map(true -> "common SNP", false -> "not common SNP")))
     write(out + "commonSNPRatio.txt", s)
   }
 
@@ -94,7 +94,7 @@ class TumorNormalSpec extends BaseSparkContextSpec {
   "QC variant types" should "succeed" in {
     val variantTypes = tumorQCrdd.variantTypeCount
 
-    val multiAllelicRatio = tumorQCrdd.multiAllelicRatio
+    val multiAllelicRatio = tumorQCrdd.multiAllelicRatio()
 
     println(variantTypes, multiAllelicRatio)
   }
