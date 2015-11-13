@@ -1,14 +1,11 @@
 package org.tmoerman.vcf.comp.core
 
-import java.io.{FileWriter, BufferedWriter, File}
+import java.io.File
 
 import org.tmoerman.test.spark.BaseSparkContextSpec
-
 import org.tmoerman.vcf.comp.VcfComparisonContext._
-import SnpComparison._
-import Model._
-import org.tmoerman.vcf.comp.core.Model.CategoryCount
-
+import org.tmoerman.vcf.comp.core.Model.{CategoryCount, _}
+import org.tmoerman.vcf.comp.core.SnpComparison._
 import org.tmoerman.vcf.comp.util.Victorinox._
 
 /**
@@ -85,7 +82,6 @@ class TumorNormalSpec extends BaseSparkContextSpec {
 
     //write(out + "transcript biotype count.txt", s)
   }
-
 
   val tumorQCparams = new VcfQCParams(label = "TUMOR")
 
