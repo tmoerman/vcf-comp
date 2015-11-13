@@ -171,8 +171,8 @@ object Model extends Serializable {
 
   def isSynonymous(genotype: AnnotatedGenotype): Option[Boolean] =
     genotype.getAnnotations.getFunctionalAnnotations.map(_.getAnnotations.head).headOption.flatMap{ _ match {
-      case "a" => Some(true)
-      case "b" => Some(false)
+      case "synonymous_variant" => Some(true)
+      case "missense_variant"   => Some(false)
       case _   => None
     }}
 

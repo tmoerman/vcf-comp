@@ -11,7 +11,7 @@ object SnpComparisonRDDFunctions {
 
   private val CLINVAR_LABELS    = Map(true -> "Clinvar",     false -> "Not Clinvar")
   private val COMMON_SNP_LABELS = Map(true -> "Common SNP",  false -> "Not Common SNP")
-  private val SYNONYMOUS_LABELS = Map(true -> "Synonoymous", false -> "Non Synonymous")
+  private val SYNONYMOUS_LABELS = Map(true -> "Synonoymous", false -> "Missense")
 
 }
 
