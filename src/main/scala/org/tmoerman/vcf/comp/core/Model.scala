@@ -169,7 +169,12 @@ object Model extends Serializable {
   def transcriptBiotype(genotype: AnnotatedGenotype): String =
     genotype.getAnnotations.getFunctionalAnnotations.flatMap(e => Option(e.getTranscriptBiotype)).headOption.getOrElse(NA)
 
-  // TODO synonymous / non-synonymous count
+  def isSynonymous(genotype: AnnotatedGenotype): Option[Boolean] =
+    genotype.getAnnotations.getFunctionalAnnotations.map(_.getAnnotations.head).headOption.flatMap{ _ match {
+      case "a" => Some(true)
+      case "b" => Some(false)
+      case _   => None
+    }}
 
   // ANNOTATIONS
 
