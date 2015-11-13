@@ -26,61 +26,52 @@ class TumorNormalSpec extends BaseSparkContextSpec {
 
   val rdd = sc.startSnpComparison(tumor, normal, params).cache()
 
-  "filtering by occurrence" should "compile" in {
+  "filtering by occurrence" should "succeed" in {
     val uniqueAndConcordant = rdd.viewOnly(CONCORDANT, UNIQUE).baseChangePatternCount
   }
 
-  "export snpCount" should "succeed" in {
+  "snpCount" should "succeed" in {
     val snpCount = rdd.categoryCount
-    val s = s"category\tcount\n" + snpCount.map{ case CategoryCount(cat, count) => s"$cat\t$count" }.mkString("\n")
-
-    write(out + "snpCount.txt", s)
   }
 
-  "export base change count " should "succeed" in {
-    val s = toCSV(List("category", "base change", "count"), rdd.baseChangeCount)
-    write(out + "snpBaseChangeCount.txt", s)
+  "base change count" should "succeed" in {
+    rdd.baseChangeCount
   }
 
-  "export base change pattern" should "succeed" in {
-    val s = toCSV(List("category", "base change pattern", "count"), rdd.baseChangePatternCount)
-    write(out + "snpBaseChangePatternCount.txt", s)
+  "base change pattern count" should "succeed" in {
+    rdd.baseChangePatternCount
   }
 
-  "export read depth distribution" should "succeed" in {
-    val s = toCSV(List("category", "read depth", "count"), rdd.readDepthDistribution())
-    write(out + "snpReadDepthCount.txt", s)
+  "read depth distribution" should "succeed" in {
+    rdd.readDepthDistribution()
   }
 
-  "export quality distribution" should "succeed" in {
-    val s = toCSV(List("category", "quality", "count"), rdd.qualityDistribution(bin = roundToDecimals(1)))
-    write(out + "snpQualityCount.txt", s)
+  "quality distribution" should "succeed" in {
+    rdd.qualityDistribution()
   }
 
-  "export allele freq distribution" should "succeed" in {
-    val s = toCSV(List("category", "allele freq", "count"), rdd.alleleFrequencyDistribution(bin = roundToDecimals(1)))
-    write(out + "snpAlleleFrequencyCount.txt", s)
+  "allele freq distribution" should "succeed" in {
+    rdd.alleleFrequencyDistribution()
   }
 
-  "export clinvar ratio" should "succeed" in {
-    val s = toCSV(List("category", "clinvar?", "count"), rdd.clinvarRatio(Map(true -> "clinvar", false -> "not clinvar")))
-    write(out + "snpClinvarRatio.txt", s)
+  "clinvar ratio" should "succeed" in {
+    rdd.clinvarRatio()
   }
 
-  "export common SNP ratio" should "succeed" in {
-    val s = toCSV(List("category", "dbSNP?", "count"), rdd.commonSnpRatio(Map(true -> "common SNP", false -> "not common SNP")))
-    write(out + "commonSNPRatio.txt", s)
+  "synonymous ratio" sould "succeed" in {
+    rdd.synonymousRatio()
   }
 
-  "export functional impact count" should "succeed" in {
-    val s = toCSV(List("category", "impact", "count"), rdd.functionalImpactCount)
-    write(out + "functionalImpactCount.txt", s)
+  "common SNP ratio" should "succeed" in {
+    rdd.commonSnpRatio(Map(true -> "common SNP", false -> "not common SNP"))
   }
 
-  "export transcript biotype count" should "succeed" in {
-    val s = toCSV(List("category", "biotype", "count"), rdd.transcriptBiotypeCount)
+  "functional impact count" should "succeed" in {
+    rdd.functionalImpactCount
+  }
 
-    //write(out + "transcript biotype count.txt", s)
+  "transcript biotype count" should "succeed" in {
+    rdd.transcriptBiotypeCount
   }
 
   val tumorQCparams = new VcfQCParams(label = "TUMOR")
