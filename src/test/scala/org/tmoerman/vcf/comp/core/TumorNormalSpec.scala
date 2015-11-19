@@ -7,6 +7,7 @@ import org.tmoerman.vcf.comp.VcfComparisonContext._
 import org.tmoerman.vcf.comp.core.Model.{CategoryCount, _}
 import org.tmoerman.vcf.comp.core.SnpComparison._
 import org.tmoerman.vcf.comp.util.Victorinox._
+import org.tmoerman.adam.fx.snpeff.SnpEffContext._
 
 /**
  * @author Thomas Moerman
@@ -25,6 +26,12 @@ class TumorNormalSpec extends BaseSparkContextSpec {
                                        labels = ("TUMOR", "NORMAL"))
 
   val rdd = sc.startSnpComparison(tumor, normal, params).cache()
+
+  "top 3 normal" should "bla" in {
+    val top3 = sc.loadAnnotatedGenotypes(normal).take(3)
+
+    top3.toString
+  }
 
   "filtering by occurrence" should "succeed" in {
     val uniqueAndConcordant = rdd.viewOnly(CONCORDANT, UNIQUE).baseChangePatternCount

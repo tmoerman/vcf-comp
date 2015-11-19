@@ -103,7 +103,7 @@ object Model extends Serializable {
 
   def baseChange(genotype: AnnotatedGenotype): BaseChange = baseChange(genotype.getGenotype.getVariant)
 
-  def baseChangeString(genotype: AnnotatedGenotype): String = format(baseChange(genotype.getGenotype.getVariant))
+  def baseChangeString(genotype: AnnotatedGenotype): String = format(baseChange(genotype))
 
   // BASE CHANGE PATTERN
 
@@ -111,7 +111,7 @@ object Model extends Serializable {
 
   def baseChangePattern(baseChange: BaseChange): BaseChangePattern = baseChange match { case (a, b) => Set(a, b) }
 
-  def baseChangePattern(genotype: AnnotatedGenotype): BaseChangePattern = baseChangePattern(baseChange(genotype.getGenotype.getVariant))
+  def baseChangePattern(genotype: AnnotatedGenotype): BaseChangePattern = baseChangePattern(baseChange(genotype))
 
   def baseChangePatternString(genotype: AnnotatedGenotype): String = baseChangePattern(genotype).toList.sorted.mkString(":")
 
@@ -149,6 +149,9 @@ object Model extends Serializable {
   val NO_CALL      = "NO CALL"
 
   def zygosity(genotype: AnnotatedGenotype): Zygosity = genotype.getGenotype.getAlleles.toList.distinct match { // @see RichGenotype.getType
+
+      // TODO turn this into an Option[Zygosity] -> to filter out crap we don't need aka ploidy > 2
+
     case List(Ref)        => HOMOZYGOUS
     case List(Alt)        => HOMOZYGOUS
     case List(Ref, Alt) |
