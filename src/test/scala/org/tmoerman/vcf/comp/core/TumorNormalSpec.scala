@@ -38,7 +38,7 @@ class TumorNormalSpec extends BaseSparkContextSpec {
   }
 
   "snpCount" should "succeed" in {
-    val snpCount = rdd.categoryCount
+    val categoryCount = rdd.categoryCount
   }
 
   "base change count" should "succeed" in {

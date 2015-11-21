@@ -1,9 +1,10 @@
 package org.tmoerman.vcf.comp.core
 
+import org.bdgenomics.adam.converters.VariantAnnotationConverter
 import org.bdgenomics.adam.rich.RichGenotype._
 import org.bdgenomics.adam.rich.RichVariant._
-import org.bdgenomics.formats.avro.GenotypeAllele.{Alt, Ref}
-import org.bdgenomics.formats.avro.{Genotype, Variant}
+import org.bdgenomics.formats.avro.GenotypeAllele.{OtherAlt, NoCall, Alt, Ref}
+import org.bdgenomics.formats.avro.{GenotypeAllele, GenotypeType, Genotype, Variant}
 import org.tmoerman.adam.fx.avro.AnnotatedGenotype
 import org.tmoerman.adam.fx.snpeff.model.RichAnnotatedGenotype
 import scala.collection.JavaConversions._
@@ -140,24 +141,24 @@ object Model extends Serializable {
 
   def isSnp(variant: Variant): Boolean = variant.isSingleNucleotideVariant()
 
+  // Allele values
+
+  def genotypeAlleles(genotype: AnnotatedGenotype): List[Base] = {
+    val variant = genotype.getGenotype.getVariant
+
+    // @see VariantAnnotationConverter#convertAlleles
+    val result = genotype.getGenotype.getAlleles.map {
+      case NoCall         => "?"
+      case Ref | OtherAlt => variant.getReferenceAllele
+      case Alt            => variant.getAlternateAllele
+    }
+
+    result.toList
+  }
+
   // ZYGOSITY
 
-  type Zygosity = String
-
-  val HOMOZYGOUS   = "HOMOZYGOUS"
-  val HETEROZYGOUS = "HETEROZYGOUS"
-  val NO_CALL      = "NO CALL"
-
-  def zygosity(genotype: AnnotatedGenotype): Zygosity = genotype.getGenotype.getAlleles.toList.distinct match { // @see RichGenotype.getType
-
-      // TODO turn this into an Option[Zygosity] -> to filter out crap we don't need aka ploidy > 2
-
-    case List(Ref)        => HOMOZYGOUS
-    case List(Alt)        => HOMOZYGOUS
-    case List(Ref, Alt) |
-         List(Alt, Ref)   => HETEROZYGOUS
-    case _                => NO_CALL
-  }
+  def zygosity(genotype: AnnotatedGenotype): Option[GenotypeType] = Try(genotype.getGenotype.getType).toOption
 
   // FUNCTIONAL ANNOTATIONS
 
@@ -197,6 +198,7 @@ object Model extends Serializable {
 
   case class SnpComparisonParams(matchOnSampleId: Boolean = false,
                                  unifyConcordant: Boolean = true,
+                                 matchFunction: AnnotatedGenotype => Any = genotypeAlleles(_: AnnotatedGenotype),
                                  labels:     (Label, Label)         = ("A", "B"),
                                  qualities:  (Quality, Quality)     = (0, 0),
                                  readDepths: (ReadDepth, ReadDepth) = (1, 1))

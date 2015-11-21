@@ -12,6 +12,7 @@ object SnpComparisonRDDFunctions {
   private val CLINVAR_LABELS    = Map(true -> "Clinvar",     false -> "Not Clinvar")
   private val COMMON_SNP_LABELS = Map(true -> "Common SNP",  false -> "Not Common SNP")
   private val SYNONYMOUS_LABELS = Map(true -> "Synonoymous", false -> "Missense")
+  // private val MULTI_ALLELIC_LABELS
 
 }
 
@@ -35,7 +36,7 @@ class SnpComparisonRDDFunctions(val rdd: RDD[(Category, AnnotatedGenotype)]) ext
 
   def baseChangeTypeCount       = countByProjection(baseChangeType)
 
-  def zygosityCount             = countByProjection(zygosity)
+  def zygosityCount             = countByProjectionOption(zygosity)
 
   def functionalImpactCount     = countByProjection(functionalImpact)
 
