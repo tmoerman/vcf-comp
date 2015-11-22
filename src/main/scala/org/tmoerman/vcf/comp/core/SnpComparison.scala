@@ -13,7 +13,7 @@ import Scalaz._
 /**
  * @author Thomas Moerman
  */
-object SnpComparison extends Serializable with Logging {
+object SnpComparison extends Serializable {
 
   // VARIANT KEY
 
@@ -46,7 +46,7 @@ object SnpComparison extends Serializable with Logging {
 
   def name(cat: Category) =
     cat match {
-      case ("", CONCORDANT)    => CONCORDANT
+      case (_, CONCORDANT)     => CONCORDANT
       case (label, occurrence) => s"$label-$occurrence"
     }
 
@@ -54,22 +54,24 @@ object SnpComparison extends Serializable with Logging {
 
   type CoGroupRow[G] = (Iterable[G], Iterable[G])
 
-  type OccurrenceRow[G, K] = Map[Occurrence, Map[Label, Map[K, Iterable[G]]]]
-
+  type OccurrenceRow[G] = Map[Occurrence, Map[Label, Map[Any, G]]]
 
   // generic types for testability
-  def groupByOccurrence[G, K](A: Label, B: Label, matchFunction: G => K)
-                             (row: CoGroupRow[G]): OccurrenceRow[G, K] =
+  def groupByOccurrence[G](A: Label,
+                           B: Label,
+                           matchFunction: G => Any,
+                           selectFunction: Iterable[G] => G)
+                          (row: CoGroupRow[G]): OccurrenceRow[G] =
     row match {
 
-      case (genotypesA, Nil) => Map(UNIQUE -> Map(A -> genotypesA.groupBy(matchFunction)))
-      case (Nil, genotypesB) => Map(UNIQUE -> Map(B -> genotypesB.groupBy(matchFunction)))
+      case (genotypesA, Nil) => Map(UNIQUE -> Map(A -> genotypesA.groupBy(matchFunction).mapValues(selectFunction)))
+      case (Nil, genotypesB) => Map(UNIQUE -> Map(B -> genotypesB.groupBy(matchFunction).mapValues(selectFunction)))
 
       case (genotypesA, genotypesB) =>
-        val mA = genotypesA.groupBy(matchFunction)
-        val mB = genotypesB.groupBy(matchFunction)
+        val mA = genotypesA.groupBy(matchFunction).mapValues(selectFunction)
+        val mB = genotypesB.groupBy(matchFunction).mapValues(selectFunction)
 
-        val concordant: OccurrenceRow[G, K] =
+        val concordant: OccurrenceRow[G] =
           (mA intersectWith mB){ case t => t }
             .toIterable
             .map { case (k, (gtA, gtB)) => ((k, gtA), (k, gtB)) }
@@ -81,7 +83,7 @@ object SnpComparison extends Serializable with Logging {
         val AminusB = mA -- mB.keys
         val BminusA = mB -- mA.keys
 
-        val discordant: OccurrenceRow[G, K] =
+        val discordant: OccurrenceRow[G] =
           (AminusB.toIterable ++ BminusA.toIterable) match {
             case Nil => Map()
             case _   => Map(DISCORDANT -> ListMap(A -> AminusB, B -> BminusA)) // ListMap to preserve A->B order
@@ -91,24 +93,25 @@ object SnpComparison extends Serializable with Logging {
     }
 
 
+
   // we want the least amount of closed over parameters as possible in this function
-  def flattenToReps(unifyConcordant: Boolean = true)
-                   (row: OccurrenceRow[AnnotatedGenotype, Any]): Iterable[(Category, AnnotatedGenotype)] =
+  def flattenToReps[G](unifyConcordant: Boolean = true)
+                      (row: OccurrenceRow[G]): Iterable[(Category, G)] =
     for { (occ, labeled)   <- row
           unified = (occ, unifyConcordant) match {
                       case (CONCORDANT, true) => labeled.take(1)
                       case _                  => labeled
                     }
           (label, matched) <- unified
-          (k, genotypes)   <- matched } yield ((label, occ), genotypes.maxBy(quality))
+          (k, genotype)    <- matched } yield ((label, occ), genotype)
 
 
   // tying all together
   def snpComparison(params: SnpComparisonParams)
                    (rddA: RDD[AnnotatedGenotype],
-                    rddB: RDD[AnnotatedGenotype]): RDD[OccurrenceRow[AnnotatedGenotype, Any]] = params match {
+                    rddB: RDD[AnnotatedGenotype]): RDD[OccurrenceRow[AnnotatedGenotype]] = params match {
 
-    case SnpComparisonParams(matchOnSampleId, matchFunction, (labelA, labelB), (qA, qB), (rdA, rdB)) =>
+    case SnpComparisonParams(matchOnSampleId, matchFunction, selectFunction, (labelA, labelB), (qA, qB), (rdA, rdB)) =>
 
       def prep(q: Quality, rd: ReadDepth, rdd: RDD[AnnotatedGenotype]): RDD[(VariantKey, AnnotatedGenotype)] =
         rdd
@@ -119,7 +122,7 @@ object SnpComparison extends Serializable with Logging {
 
       prep(qA, rdA, rddA).cogroup(prep(qB, rdB, rddB))
         .map(dropKey)
-        .map(groupByOccurrence(labelA, labelB, matchFunction))
+        .map(groupByOccurrence(labelA, labelB, matchFunction, selectFunction))
   }
 
 }

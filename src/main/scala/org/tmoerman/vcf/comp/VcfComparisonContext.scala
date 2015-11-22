@@ -20,11 +20,11 @@ object VcfComparisonContext {
 
   implicit def pimpQCRDD(rdd: RDD[VariantContext]): QCRDDFunctions = new QCRDDFunctions(rdd)
 
-  implicit def pimpSnpComparisonRDD(rdd: RDD[OccurrenceRow[AnnotatedGenotype, Any]]): SnpComparisonRDDFunctions = new SnpComparisonRDDFunctions(rdd)
+  implicit def pimpSnpComparisonRDD(rdd: RDD[OccurrenceRow[AnnotatedGenotype]]): SnpComparisonRDDFunctions = new SnpComparisonRDDFunctions(rdd)
 
 }
 
-class VcfComparisonContext(val sc: SparkContext) extends Serializable with Logging {
+class VcfComparisonContext(val sc: SparkContext) extends Serializable {
 
   /**
    * @param vcfFile Name of the VCF file.
