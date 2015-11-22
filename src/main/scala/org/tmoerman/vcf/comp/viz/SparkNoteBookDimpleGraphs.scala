@@ -35,8 +35,6 @@ object SparkNoteBookDimpleGraphs {
 
     lazy val maxPoints = data.size
 
-    def plot[X](implicit f: DimpleChart => X): X = f(this)
-
     override def toString = getClass.getSimpleName
 
   }
@@ -80,6 +78,8 @@ class CategoryCountDimpleChartFunctions(private[this] val data: Iterable[Categor
     DimpleChart(data.toList, js, sizes = (width + MARGIN_INC, height + MARGIN_INC))
   }
 
+  def table = data.toList
+
 }
 
 class ProjectionCountDimpleChartFunctions[P](private[this] val data: Iterable[ProjectionCount[P]]) extends Serializable with ApiHelp {
@@ -118,6 +118,8 @@ class ProjectionCountDimpleChartFunctions[P](private[this] val data: Iterable[Pr
 
     DimpleChart(data.toList, js, sizes = (width + MARGIN_INC, height + MARGIN_INC))
   }
+
+  def table = data.toList
 
 }
 
@@ -307,5 +309,7 @@ class CategoryProjectionCountDimpleGraphFunctions[P](private[this] val data: Ite
 
     DimpleChart(data.toList, js, sizes = (width + MARGIN_INC, height + MARGIN_INC))
   }
+
+  def table = data.toList
 
 }
