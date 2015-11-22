@@ -4,9 +4,9 @@ import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.tmoerman.adam.fx.avro.AnnotatedGenotype
 import org.tmoerman.vcf.comp.core.Model._
-import org.tmoerman.vcf.comp.core.SnpComparison.{OccurrenceRow, Occurrence}
 
 import org.tmoerman.vcf.comp.util.Victorinox._
+import scala.collection.immutable.ListMap
 import scalaz._
 import Scalaz._
 
@@ -69,16 +69,23 @@ object SnpComparison extends Serializable with Logging {
         val mA = genotypesA.groupBy(matchFunction)
         val mB = genotypesB.groupBy(matchFunction)
 
-        val concordant =
+        val concordant: OccurrenceRow[G, K] =
           (mA intersectWith mB){ case t => t }
             .toIterable
             .map { case (k, (gtA, gtB)) => ((k, gtA), (k, gtB)) }
             .unzip match {
               case (Nil, Nil) => Map() // unzip yields a tuple of Nils if the intersection is empty
-              case (ccA, ccB) => Map(CONCORDANT -> Map(A -> ccA.toMap, B -> ccB.toMap))
+              case (ccA, ccB) => Map(CONCORDANT -> ListMap(A -> ccA.toMap, B -> ccB.toMap)) // ListMap to preserve A->B order
             }
 
-        val discordant = Map(DISCORDANT -> Map(A -> (mA -- mB.keys), B -> (mB -- mA.keys)))
+        val AminusB = mA -- mB.keys
+        val BminusA = mB -- mA.keys
+
+        val discordant: OccurrenceRow[G, K] =
+          (AminusB.toIterable ++ BminusA.toIterable) match {
+            case Nil => Map()
+            case _   => Map(DISCORDANT -> ListMap(A -> AminusB, B -> BminusA)) // ListMap to preserve A->B order
+          }
 
         concordant ++ discordant
     }
