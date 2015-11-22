@@ -6,13 +6,14 @@ import org.tmoerman.adam.fx.avro.AnnotatedGenotype
 import org.tmoerman.vcf.comp.core.Model._
 
 import org.tmoerman.vcf.comp.util.Victorinox._
+import scala.collection.immutable.ListMap
 import scalaz._
 import Scalaz._
 
 /**
  * @author Thomas Moerman
  */
-object SnpComparison extends Serializable with Logging {
+object SnpComparison extends Serializable {
 
   // VARIANT KEY
 
@@ -45,60 +46,72 @@ object SnpComparison extends Serializable with Logging {
 
   def name(cat: Category) =
     cat match {
-      case ("", CONCORDANT)    => CONCORDANT
+      case (_, CONCORDANT)     => CONCORDANT
       case (label, occurrence) => s"$label-$occurrence"
     }
 
   // COMPARISON
 
-  type ComparisonRow = (Iterable[AnnotatedGenotype], Iterable[AnnotatedGenotype])
+  type CoGroupRow[G] = (Iterable[G], Iterable[G])
 
-  def categorize[K](A: Label, B: Label, unifyConcordant: Boolean, matchFunction: AnnotatedGenotype => K)
-                   (row: ComparisonRow): Map[Category, Map[K, Iterable[AnnotatedGenotype]]] = {
+  type OccurrenceRow[G] = Map[Occurrence, Map[Label, Map[Any, G]]]
 
+  // generic types for testability
+  def groupByOccurrence[G](A: Label,
+                           B: Label,
+                           matchFunction: G => Any,
+                           selectFunction: Iterable[G] => G)
+                          (row: CoGroupRow[G]): OccurrenceRow[G] =
     row match {
 
-      case (genotypesA, Nil) => Map((A, UNIQUE) -> genotypesA.groupBy(matchFunction))
-      case (Nil, genotypesB) => Map((B, UNIQUE) -> genotypesB.groupBy(matchFunction))
+      case (genotypesA, Nil) => Map(UNIQUE -> Map(A -> genotypesA.groupBy(matchFunction).mapValues(selectFunction)))
+      case (Nil, genotypesB) => Map(UNIQUE -> Map(B -> genotypesB.groupBy(matchFunction).mapValues(selectFunction)))
 
       case (genotypesA, genotypesB) =>
-        val mA = genotypesA.groupBy(matchFunction)
-        val mB = genotypesB.groupBy(matchFunction)
+        val mA = genotypesA.groupBy(matchFunction).mapValues(selectFunction)
+        val mB = genotypesB.groupBy(matchFunction).mapValues(selectFunction)
 
-        lazy val concordant: Map[Category, Map[K, Iterable[AnnotatedGenotype]]] =
-          (mA intersectWith mB) { case t => t }
+        val concordant: OccurrenceRow[G] =
+          (mA intersectWith mB){ case t => t }
             .toIterable
             .map { case (k, (gtA, gtB)) => ((k, gtA), (k, gtB)) }
             .unzip match {
-            case (Nil, Nil) => Map() // unzip yields a tuple of Nils if the intersection is empty
-            case (ccA, ccB) =>
-              if (unifyConcordant)
-                Map(("", CONCORDANT) -> ccA.toMap)
-              else
-                Map((A, CONCORDANT) -> ccA.toMap,
-                    (B, CONCORDANT) -> ccB.toMap)
-          }
-
-        lazy val A_min_B = (mA -- mB.keys).mapKeys(withKey((A, DISCORDANT)))
-        lazy val B_min_A = (mB -- mA.keys).mapKeys(withKey((B, DISCORDANT)))
-
-        lazy val discordant: Map[Category, Map[K, Iterable[AnnotatedGenotype]]] =
-          (A_min_B ++ B_min_A)
-            .toIterable // mapping over an Iterable differs from mapping over a Map
-            .map { case ((cat, k), genotypes) => Map(cat -> Map(k -> genotypes.toList)) } match {
-              case Nil => Map()
-              case list => list.reduce(_ |+| _)
+              case (Nil, Nil) => Map() // unzip yields a tuple of Nils if the intersection is empty
+              case (ccA, ccB) => Map(CONCORDANT -> ListMap(A -> ccA.toMap, B -> ccB.toMap)) // ListMap to preserve A->B order
             }
+
+        val AminusB = mA -- mB.keys
+        val BminusA = mB -- mA.keys
+
+        val discordant: OccurrenceRow[G] =
+          (AminusB.toIterable ++ BminusA.toIterable) match {
+            case Nil => Map()
+            case _   => Map(DISCORDANT -> ListMap(A -> AminusB, B -> BminusA)) // ListMap to preserve A->B order
+          }
 
         concordant ++ discordant
     }
-  }
 
-  def compareSnps(params: SnpComparisonParams = new SnpComparisonParams())
-                 (rddA: RDD[AnnotatedGenotype],
-                  rddB: RDD[AnnotatedGenotype]): RDD[(Category, AnnotatedGenotype)] = params match {
 
-    case SnpComparisonParams(matchOnSampleId, unify, matchFn, (labelA, labelB), (qA, qB), (rdA, rdB)) =>
+
+  // we want the least amount of closed over parameters as possible in this function
+  def flattenToReps[G](unifyConcordant: Boolean = true)
+                      (row: OccurrenceRow[G]): Iterable[(Category, G)] =
+    for { (occ, labeled)   <- row
+          unified = (occ, unifyConcordant) match {
+                      case (CONCORDANT, true) => labeled.take(1)
+                      case _                  => labeled
+                    }
+          (label, matched) <- unified
+          (k, genotype)    <- matched } yield ((label, occ), genotype)
+
+
+  // tying all together
+  def snpComparison(params: SnpComparisonParams)
+                   (rddA: RDD[AnnotatedGenotype],
+                    rddB: RDD[AnnotatedGenotype]): RDD[OccurrenceRow[AnnotatedGenotype]] = params match {
+
+    case SnpComparisonParams(matchOnSampleId, matchFunction, selectFunction, (labelA, labelB), (qA, qB), (rdA, rdB)) =>
 
       def prep(q: Quality, rd: ReadDepth, rdd: RDD[AnnotatedGenotype]): RDD[(VariantKey, AnnotatedGenotype)] =
         rdd
@@ -107,16 +120,9 @@ object SnpComparison extends Serializable with Logging {
           .filter(readDepth(_) >= rd)
           .keyBy(variantKey(params.matchOnSampleId))
 
-      val genotypesByCategory: RDD[Map[Category, Iterable[AnnotatedGenotype]]] =
-        prep(qA, rdA, rddA).cogroup(prep(qB, rdB, rddB))
-          .map(dropKey)                                            // coGroup:             (Iterable[AnnotatedGenotype], Iterable[AnnotatedGenotype])
-          .map(categorize(A = labelA,
-                          B = labelB,
-                          unifyConcordant = unify,
-                          matchFunction = matchFn))                // categorized:         Map[Category, Map[BaseChange, Iterable[AnnotatedGenotype]]]
-          .map(_.mapValues(_.mapValues(_.maxBy(quality)).values))  // max Q by BaseChange: Map[Category, Iterable[AnnotatedGenotype]]
-
-      genotypesByCategory.flatMap(flattenWithKey)
+      prep(qA, rdA, rddA).cogroup(prep(qB, rdB, rddB))
+        .map(dropKey)
+        .map(groupByOccurrence(labelA, labelB, matchFunction, selectFunction))
   }
 
 }

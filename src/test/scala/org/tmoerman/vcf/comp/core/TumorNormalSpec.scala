@@ -15,15 +15,14 @@ import org.tmoerman.adam.fx.snpeff.SnpEffContext._
 class TumorNormalSpec extends BaseSparkContextSpec {
 
   val wd = "/Users/tmo/Work/exascience/data/VCF-comp/tumor.normal/"
-  val out = wd + "report.v3/"
+  val out = wd + "report.v5/"
 
   new File(out).mkdir()
 
   val tumor  = wd + "4146_T.vcf.gz.annotated.gz"
   val normal = wd + "4146_N.vcf.gz.annotated.gz"
 
-  val params = new SnpComparisonParams(unifyConcordant = true,
-                                       labels = ("TUMOR", "NORMAL"))
+  val params = new SnpComparisonParams(labels = ("TUMOR", "NORMAL"))
 
   val rdd = sc.startSnpComparison(tumor, normal, params).cache()
 

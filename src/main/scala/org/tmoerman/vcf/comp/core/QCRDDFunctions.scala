@@ -1,13 +1,13 @@
 package org.tmoerman.vcf.comp.core
 
-import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.VariantContext
 import Model._
+import org.tmoerman.vcf.comp.util.ApiHelp
 
 import scala.reflect.ClassTag
 
-class QCRDDFunctions(val rdd: RDD[VariantContext]) extends Serializable with Logging {
+class QCRDDFunctions(private[this] val rdd: RDD[VariantContext]) extends Serializable with ApiHelp {
 
   def variantTypeCount  = countByProjection(v => variantType(v.variant.variant))
 

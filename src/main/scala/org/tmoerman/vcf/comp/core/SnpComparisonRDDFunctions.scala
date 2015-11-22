@@ -1,31 +1,31 @@
 package org.tmoerman.vcf.comp.core
 
-import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.tmoerman.adam.fx.avro.AnnotatedGenotype
 import org.tmoerman.adam.fx.snpeff.model.RichAnnotated._
 import org.tmoerman.vcf.comp.core.Model._
 import org.tmoerman.vcf.comp.core.SnpComparison._
+import org.tmoerman.vcf.comp.util.ApiHelp
 
-object SnpComparisonRDDFunctions {
+object SnpComparisonLabels {
 
-  private val CLINVAR_LABELS    = Map(true -> "Clinvar",     false -> "Not Clinvar")
-  private val COMMON_SNP_LABELS = Map(true -> "Common SNP",  false -> "Not Common SNP")
-  private val SYNONYMOUS_LABELS = Map(true -> "Synonoymous", false -> "Missense")
-  // private val MULTI_ALLELIC_LABELS
+  val CLINVAR_LABELS    = Map(true -> "Clinvar",     false -> "Not Clinvar")
+  val COMMON_SNP_LABELS = Map(true -> "Common SNP",  false -> "Not Common SNP")
+  val SYNONYMOUS_LABELS = Map(true -> "Synonoymous", false -> "Missense")
 
 }
 
-class SnpComparisonRDDFunctions(val rdd: RDD[(Category, AnnotatedGenotype)]) extends Serializable with Logging {
-  import SnpComparisonRDDFunctions._
+class SnpComparisonRDDFunctions(private[this] val rdd: RDD[OccurrenceRow[AnnotatedGenotype]]) extends Serializable with ApiHelp {
+  import SnpComparisonLabels._
 
-  def viewOnly(occurrences: Occurrence*): RDD[(Category, AnnotatedGenotype)] =
-    rdd
-      .filter{ case ((_, occurrence), _) => occurrences.contains(occurrence) ||
-                                            occurrences.map(_.toLowerCase).contains(occurrence.toLowerCase) }
+  def viewOnly(occurrences: Occurrence*): RDD[OccurrenceRow[AnnotatedGenotype]] =
+    rdd.map(row => row.filterKeys(occurrence =>
+      occurrences.contains(occurrence) ||
+      occurrences.map(_.toLowerCase).contains(occurrence.toLowerCase)))
 
   def categoryCount: Iterable[CategoryCount] =
     rdd
+      .flatMap(flattenToReps())
       .map{ case (cat, _) => name(cat) }
       .countByValue
       .map{ case (cat, count) => CategoryCount(cat, count) }
@@ -58,6 +58,7 @@ class SnpComparisonRDDFunctions(val rdd: RDD[(Category, AnnotatedGenotype)]) ext
 
   def countByProjection[P](projection: AnnotatedGenotype => P): Iterable[CategoryProjectionCount[P]] =
     rdd
+      .flatMap(flattenToReps())
       .map{ case (cat, rep) => (name(cat), rep) }
       .mapValues(projection(_))
       .countByValue
@@ -65,17 +66,29 @@ class SnpComparisonRDDFunctions(val rdd: RDD[(Category, AnnotatedGenotype)]) ext
 
   def countByProjectionOption[P](projection: AnnotatedGenotype => Option[P]): Iterable[CategoryProjectionCount[P]] =
     rdd
+      .flatMap(flattenToReps())
       .map{ case (cat, rep) => (name(cat), rep) }
       .flatMapValues(projection(_))
       .countByValue
       .map{ case ((cat, p), count) => CategoryProjectionCount(cat, p, count) }
 
-  /**
-   * @return Returns a help String.
-   */
-  def help =
-    """
-      | Documentation goes here.
-    """.stripMargin
+  def zygositySwitchCount = countBySwitch(zygosity)
+
+  def allelesSwitchCount = countBySwitch(a => Some(genotypeAllelesString(a)))
+
+  def countBySwitch[P](projection: AnnotatedGenotype => Option[P]): Iterable[CategoryProjectionCount[String]] =
+    rdd
+      .flatMap(_
+          .filter { case (occ, labeled) => occ == CONCORDANT || occ == DISCORDANT }
+          .flatMap { case (occ, labeled) =>
+            val arr = labeled.toArray
+
+            for {projectionA <- arr(0)._2.values.flatMap(projection(_))
+                 projectionB <- arr(1)._2.values.flatMap(projection(_))
+                 if projectionA != projectionB // only switches are interesting
+                 switch = s"$projectionA -> $projectionB"} yield (occ, switch)
+          })
+      .countByValue
+      .map{ case ((cat, p), count) => CategoryProjectionCount(cat, p, count) }
 
 }
