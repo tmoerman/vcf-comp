@@ -197,7 +197,6 @@ object Model extends Serializable {
                          readDepth: ReadDepth = 0)
 
   case class SnpComparisonParams(matchOnSampleId: Boolean = false,
-                                 unifyConcordant: Boolean = true,
                                  matchFunction: AnnotatedGenotype => Any = genotypeAlleles(_: AnnotatedGenotype),
                                  labels:     (Label, Label)         = ("A", "B"),
                                  qualities:  (Quality, Quality)     = (0, 0),
