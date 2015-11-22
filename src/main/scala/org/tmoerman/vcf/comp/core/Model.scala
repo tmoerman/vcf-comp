@@ -156,6 +156,8 @@ object Model extends Serializable {
     result.toList
   }
 
+  def genotypeAllelesString(genotype: AnnotatedGenotype): String = "(" + genotypeAlleles(genotype).mkString(",") + ")"
+
   // ZYGOSITY
 
   def zygosity(genotype: AnnotatedGenotype): Option[GenotypeType] = Try(genotype.getGenotype.getType).toOption
@@ -198,6 +200,7 @@ object Model extends Serializable {
 
   case class SnpComparisonParams(matchOnSampleId: Boolean = false,
                                  matchFunction: AnnotatedGenotype => Any = genotypeAlleles(_: AnnotatedGenotype),
+                                 selectFunction: Iterable[AnnotatedGenotype] => AnnotatedGenotype = _.maxBy(quality),
                                  labels:     (Label, Label)         = ("A", "B"),
                                  qualities:  (Quality, Quality)     = (0, 0),
                                  readDepths: (ReadDepth, ReadDepth) = (1, 1))
