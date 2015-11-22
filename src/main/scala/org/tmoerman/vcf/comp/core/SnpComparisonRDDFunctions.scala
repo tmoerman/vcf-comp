@@ -76,7 +76,7 @@ class SnpComparisonRDDFunctions(private[this] val rdd: RDD[OccurrenceRow[Annotat
 
   def allelesSwitchCount = countBySwitch(a => Some(genotypeAllelesString(a)))
 
-  def countBySwitch[P](projection: AnnotatedGenotype => Option[P]) =
+  def countBySwitch[P](projection: AnnotatedGenotype => Option[P]): Iterable[CategoryProjectionCount[String]] =
     rdd
       .flatMap(_
           .filter { case (occ, labeled) => occ == CONCORDANT || occ == DISCORDANT }
@@ -90,6 +90,5 @@ class SnpComparisonRDDFunctions(private[this] val rdd: RDD[OccurrenceRow[Annotat
           })
       .countByValue
       .map{ case ((cat, p), count) => CategoryProjectionCount(cat, p, count) }
-
 
 }
