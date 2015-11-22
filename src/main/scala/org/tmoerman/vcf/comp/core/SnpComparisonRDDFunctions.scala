@@ -16,16 +16,17 @@ object SnpComparisonRDDFunctions {
 
 }
 
-class SnpComparisonRDDFunctions(val rdd: RDD[(Category, AnnotatedGenotype)]) extends Serializable with Logging {
+class SnpComparisonRDDFunctions(val rdd: RDD[OccurrenceRow[AnnotatedGenotype, Any]]) extends Serializable with Logging {
   import SnpComparisonRDDFunctions._
 
-  def viewOnly(occurrences: Occurrence*): RDD[(Category, AnnotatedGenotype)] =
-    rdd
-      .filter{ case ((_, occurrence), _) => occurrences.contains(occurrence) ||
-                                            occurrences.map(_.toLowerCase).contains(occurrence.toLowerCase) }
+  def viewOnly(occurrences: Occurrence*): RDD[OccurrenceRow[AnnotatedGenotype, Any]] =
+    rdd.map(row => row.filterKeys(occurrence =>
+      occurrences.contains(occurrence) ||
+      occurrences.map(_.toLowerCase).contains(occurrence.toLowerCase)))
 
   def categoryCount: Iterable[CategoryCount] =
     rdd
+      .flatMap(flattenToReps())
       .map{ case (cat, _) => name(cat) }
       .countByValue
       .map{ case (cat, count) => CategoryCount(cat, count) }
@@ -58,6 +59,7 @@ class SnpComparisonRDDFunctions(val rdd: RDD[(Category, AnnotatedGenotype)]) ext
 
   def countByProjection[P](projection: AnnotatedGenotype => P): Iterable[CategoryProjectionCount[P]] =
     rdd
+      .flatMap(flattenToReps())
       .map{ case (cat, rep) => (name(cat), rep) }
       .mapValues(projection(_))
       .countByValue
@@ -65,6 +67,7 @@ class SnpComparisonRDDFunctions(val rdd: RDD[(Category, AnnotatedGenotype)]) ext
 
   def countByProjectionOption[P](projection: AnnotatedGenotype => Option[P]): Iterable[CategoryProjectionCount[P]] =
     rdd
+      .flatMap(flattenToReps())
       .map{ case (cat, rep) => (name(cat), rep) }
       .flatMapValues(projection(_))
       .countByValue

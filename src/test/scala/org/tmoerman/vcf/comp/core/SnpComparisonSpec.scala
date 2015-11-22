@@ -13,7 +13,7 @@ class SnpComparisonSpec extends BaseSparkContextSpec {
 
   val annotated = "src/test/resources/small.snpEff.vcf"
 
-  val params = new SnpComparisonParams(unifyConcordant = true)
+  val params = new SnpComparisonParams()
 
   val rdd = sc.startSnpComparison(annotated, annotated, params).cache()
 
@@ -22,7 +22,7 @@ class SnpComparisonSpec extends BaseSparkContextSpec {
   }
 
   "comparing the same VCF file" should "result in concordant genotypes only" in {
-    rdd.map(_._1._2).distinct().collect shouldBe Array(CONCORDANT)
+    rdd.flatMap(_.keys).distinct().collect shouldBe Array(CONCORDANT)
   }
 
 }

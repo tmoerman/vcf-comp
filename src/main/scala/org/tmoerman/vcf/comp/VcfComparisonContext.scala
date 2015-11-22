@@ -20,7 +20,7 @@ object VcfComparisonContext {
 
   implicit def pimpQCRDD(rdd: RDD[VariantContext]): QCRDDFunctions = new QCRDDFunctions(rdd)
 
-  implicit def pimpSnpComparisonRDD(rdd: RDD[(Category, AnnotatedGenotype)]): SnpComparisonRDDFunctions = new SnpComparisonRDDFunctions(rdd)
+  implicit def pimpSnpComparisonRDD(rdd: RDD[OccurrenceRow[AnnotatedGenotype, Any]]): SnpComparisonRDDFunctions = new SnpComparisonRDDFunctions(rdd)
 
 }
 
@@ -52,12 +52,12 @@ class VcfComparisonContext(val sc: SparkContext) extends Serializable with Loggi
    */
   def startSnpComparison(vcfFileA: String,
                          vcfFileB: String,
-                         params: SnpComparisonParams = new SnpComparisonParams()): RDD[(Category, AnnotatedGenotype)] = {
+                         params: SnpComparisonParams = new SnpComparisonParams()) = {
 
     val aRDD = sc.loadAnnotatedGenotypes(vcfFileA)
     val bRDD = sc.loadAnnotatedGenotypes(vcfFileB)
 
-    compareSnps(params)(aRDD, bRDD)
+    snpComparison(params)(aRDD, bRDD)
   }
 
 }
