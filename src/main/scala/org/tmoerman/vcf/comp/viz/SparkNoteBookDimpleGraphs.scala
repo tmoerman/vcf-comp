@@ -192,6 +192,7 @@ class CategoryProjectionCountDimpleGraphFunctions[P](private[this] val data: Ite
 
   def groupedBarChart(width:   Int    = DEFAULT_WIDTH,
                       height:  Int    = DEFAULT_HEIGHT,
+                      x_margin: Int   = 60,
                       x_title: String = "projection",
                       x_reverse: Boolean = false,
                       y_title: String = "count",
@@ -206,7 +207,7 @@ class CategoryProjectionCountDimpleGraphFunctions[P](private[this] val data: Ite
 
     val js = s"""
     function(data, headers, chart) {
-      chart.setBounds(60, 30, $width, $height);
+      chart.setBounds($x_margin, 30, $width, $height);
 
       var x = chart.addCategoryAxis("x", $categoryFields);
       x.title = "$x_title";
@@ -231,6 +232,7 @@ class CategoryProjectionCountDimpleGraphFunctions[P](private[this] val data: Ite
   def lollipopPieChart(width:  Int = DEFAULT_WIDTH,
                        height: Int = DEFAULT_HEIGHT,
                        pie_radius: Int = 20,
+                       x_margin: Int   = 60,
                        x_title: String = "projection",
                        y_title: String = "count",
                        y_logAxis: Boolean = false,
@@ -240,7 +242,7 @@ class CategoryProjectionCountDimpleGraphFunctions[P](private[this] val data: Ite
 
     val js = s"""
     function(data, headers, chart) {
-      chart.setBounds(60, 30, $width, $height);
+      chart.setBounds($x_margin, 30, $width, $height);
 
       var x = chart.addCategoryAxis("x", ["category"]);
       x.title = "$x_title";
@@ -265,10 +267,9 @@ class CategoryProjectionCountDimpleGraphFunctions[P](private[this] val data: Ite
     DimpleChart(data.toList, js, sizes = (width + MARGIN_INC, height + MARGIN_INC))
   }
 
-  def lineChart(data: Iterable[CategoryProjectionCount[P]],
-                width:   Int    = DEFAULT_WIDTH,
+  def lineChart(width:   Int    = DEFAULT_WIDTH,
                 height:  Int    = DEFAULT_HEIGHT,
-                pie_radius: Int = 20,
+                x_margin: Int   = 60,
                 x_title: String = "projection",
                 y_title: String = "count",
                 x_min:   Double = 0,
@@ -283,7 +284,7 @@ class CategoryProjectionCountDimpleGraphFunctions[P](private[this] val data: Ite
 
     val js = s"""
     function(data, headers, chart) {
-      chart.setBounds(60, 30, $width, $height);
+      chart.setBounds($x_margin, 30, $width, $height);
 
       var x = chart.$addXAxis("x", ["projection"]);
       x.title = "$x_title";
