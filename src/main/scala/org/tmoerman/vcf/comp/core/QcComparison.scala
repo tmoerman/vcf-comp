@@ -7,7 +7,7 @@ import org.tmoerman.vcf.comp.core.Model._
 /**
  * @author Thomas Moerman
  */
-object QC {
+object QcComparison extends Serializable {
 
   def meta(rdd: RDD[String]): Map[String, List[String]] =
     rdd
@@ -18,13 +18,21 @@ object QC {
       .groupBy(_._1)
       .mapValues(_.map(_._2))
 
-  def prep(params: VcfQCParams = new VcfQCParams())
-          (rdd: RDD[VariantContext]): RDD[VariantContext] = params match {
+  def qcComparison(params: ComparisonParams = new ComparisonParams())
+                  (rddA: RDD[VariantContext],
+                   rddB: RDD[VariantContext]): RDD[(Label, VariantContext)] = {
 
-    case VcfQCParams(label, q, rd) =>
+    val (labelA, labelB) = params.labels
+    val (qA, qB)         = params.qualities
+    val (rdA, rdB)       = params.readDepths
+
+    def prep(q: Quality, rd: ReadDepth, rdd: RDD[VariantContext]) =
       rdd
         .filter(_.genotypes.forall(quality(_) >= q))
         .filter(_.genotypes.forall(readDepth(_) >= q))
+
+    prep(qA, rdA, rddA).keyBy(_ => labelA) ++
+    prep(qB, rdB, rddB).keyBy(_ => labelB)
   }
 
 }
