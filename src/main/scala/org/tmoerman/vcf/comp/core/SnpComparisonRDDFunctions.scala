@@ -36,7 +36,7 @@ class SnpComparisonRDDFunctions(private[this] val rdd: RDD[OccurrenceRow[Annotat
 
   def baseChangeTypeCount       = countByProjection(baseChangeType)
 
-  def zygosityCount             = countByProjectionOption(zygosity)
+  def zygosityCount             = countByTraversableProjection(zygosity)
 
   def functionalImpactCount     = countByProjection(functionalImpact)
 
@@ -44,17 +44,21 @@ class SnpComparisonRDDFunctions(private[this] val rdd: RDD[OccurrenceRow[Annotat
 
   def transcriptBiotypeCount    = countByProjection(transcriptBiotype)
 
-  def clinvarRatio               (label: Boolean => String = CLINVAR_LABELS)    = countByProjection(g => label(hasClinvarAnnotations(g)))
+  def clinvarRatio                (label: Boolean => String = CLINVAR_LABELS)    = countByProjection(g => label(hasClinvarAnnotations(g)))
 
-  def commonSnpRatio             (label: Boolean => String = COMMON_SNP_LABELS) = countByProjection(g => label(hasDbSnpAnnotations(g)))
+  def commonSnpRatio              (label: Boolean => String = COMMON_SNP_LABELS) = countByProjection(g => label(hasDbSnpAnnotations(g)))
 
-  def synonymousRatio            (label: Boolean => String = SYNONYMOUS_LABELS) = countByProjectionOption(g => isSynonymous(g).map(label))
+  def synonymousRatio             (label: Boolean => String = SYNONYMOUS_LABELS) = countByTraversableProjection(g => isSynonymous(g).map(label))
 
-  def readDepthDistribution      (bin: ReadDepth => Double = identity)   = countByProjection(g => bin(readDepth(g)))
+  def readDepthDistribution       (step: ReadDepth = DEFAULT_READ_DEPTH_STEP)    = countByProjection(g => quantize(step)(readDepth(g)))
 
-  def qualityDistribution        (bin: Double => Double = quantize(25))  = countByProjection(g => bin(quality(g)))
+  def qualityDistribution         (step: Quality = DEFAULT_QUALITY_STEP)         = countByProjection(g => quantize(step)(quality(g)))
 
-  def alleleFrequencyDistribution(bin: Double => Double = quantize(.01)) = countByProjection(g => bin(alleleFrequency(g)))
+  def alleleFrequencyDistribution (step: Double = DEFAULT_ALLELE_FREQUENCY_STEP) = countByProjection(g => quantize(step)(alleleFrequency(g)))
+
+  def zygositySwitchCount       = countBySwitch(zygosity)
+
+  def allelesSwitchCount        = countBySwitch(a => Some(genotypeAllelesString(a)))
 
   def countByProjection[P](projection: AnnotatedGenotype => P): Iterable[CategoryProjectionCount[P]] =
     rdd
@@ -64,17 +68,13 @@ class SnpComparisonRDDFunctions(private[this] val rdd: RDD[OccurrenceRow[Annotat
       .countByValue
       .map{ case ((cat, p), count) => CategoryProjectionCount(cat, p, count) }
 
-  def countByProjectionOption[P](projection: AnnotatedGenotype => Option[P]): Iterable[CategoryProjectionCount[P]] =
+  def countByTraversableProjection[P](projection: AnnotatedGenotype => Traversable[P]): Iterable[CategoryProjectionCount[P]] =
     rdd
       .flatMap(flattenToReps())
       .map{ case (cat, rep) => (name(cat), rep) }
       .flatMapValues(projection(_))
       .countByValue
       .map{ case ((cat, p), count) => CategoryProjectionCount(cat, p, count) }
-
-  def zygositySwitchCount = countBySwitch(zygosity)
-
-  def allelesSwitchCount = countBySwitch(a => Some(genotypeAllelesString(a)))
 
   def countBySwitch[P](projection: AnnotatedGenotype => Option[P]): Iterable[CategoryProjectionCount[String]] =
     rdd
