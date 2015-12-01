@@ -8,7 +8,7 @@ import org.tmoerman.vcf.comp.util.ApiHelp
 import scala.reflect.ClassTag
 
 class QcComparisonRDDFunctions(private[this] val rdd: RDD[(Label, VariantContext)]) extends Serializable with ApiHelp {
-
+  
   def variantTypeCount() = countByProjection(vc => variantType(vc.variant))
 
   def snpCountByContig() =

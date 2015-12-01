@@ -17,15 +17,15 @@ import org.tmoerman.vcf.comp.util.ApiHelp
  */
 object VcfComparisonContext {
 
-  implicit def toVcfComparisonContext(sc: SparkContext): VcfComparisonContext = new VcfComparisonContext(sc)
+  implicit def pimpSparkContext(sc: SparkContext): VcfComparisonContextFunctions = new VcfComparisonContextFunctions(sc)
 
-  implicit def pimpQCRDD(rdd: RDD[(Label, VariantContext)]): QcComparisonRDDFunctions = new QcComparisonRDDFunctions(rdd)
+  implicit def pimpQcComparisonRDD(rdd: RDD[(Label, VariantContext)]): QcComparisonRDDFunctions = new QcComparisonRDDFunctions(rdd)
 
   implicit def pimpSnpComparisonRDD(rdd: RDD[OccurrenceRow[AnnotatedGenotype]]): SnpComparisonRDDFunctions = new SnpComparisonRDDFunctions(rdd)
 
 }
 
-class VcfComparisonContext(val sc: SparkContext) extends Serializable with ApiHelp {
+class VcfComparisonContextFunctions(private[this] val sc: SparkContext) extends Serializable with ApiHelp {
 
   /**
    * @param vcfFile Name of the VCF file.
