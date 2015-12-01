@@ -1,6 +1,6 @@
 package org.tmoerman.vcf.comp.viz
 
-import org.tmoerman.vcf.comp.core.Model.{CategoryCount, ProjectionCount, CategoryProjectionCount}
+import org.tmoerman.vcf.comp.core.Model.{QcProjectionCount, CategoryCount, ProjectionCount, CategoryProjectionCount}
 import org.tmoerman.vcf.comp.util.ApiHelp
 
 /**
@@ -37,6 +37,51 @@ object SparkNoteBookDimpleGraphs {
 
     override def toString = getClass.getSimpleName
 
+  }
+
+}
+
+class QcProjectionCountDimpleChartFunctions[P](private[this] val data: Iterable[QcProjectionCount[P]]) extends Serializable with ApiHelp {
+  import SparkNoteBookDimpleGraphs._
+
+  def groupedBarChart(width:   Int    = 600,
+                      height:  Int    = 400,
+                      x_margin: Int   = 60,
+                      x_title: String = "variant type by contig",
+                      x_order: Boolean = true,
+                      y_title: String = "count",
+                      y_axisType: String = "measure",
+                      show_legend: Boolean = true) = {
+
+    val addYAxis = toAxisType(y_axisType)
+
+    val categoryFields = """["projection", "label"]"""
+
+    val xOrderRule = if (x_order) "projection" else ""
+
+    val js = s"""
+    function(data, headers, chart) {
+      chart.setBounds($x_margin, 30, $width, $height);
+
+      var x = chart.addCategoryAxis("x", $categoryFields);
+      x.title = "$x_title";
+      x.addOrderRule("$xOrderRule");
+
+      var y = chart.$addYAxis("y", "count");
+      y.title = "$y_title";
+      y.tickFormat = ".f";
+
+      var s = chart.addSeries(["label"], dimple.plot.bar)
+      s.addOrderRule("label");
+
+      if ($show_legend) {
+        chart.addLegend($width, 10, 100, 300, "right");
+      }
+
+      chart.draw();
+    }"""
+
+    DimpleChart(data.toList, js, sizes = (width + 150, height + 150))
   }
 
 }
