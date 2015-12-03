@@ -20,6 +20,9 @@ object SparkNoteBookDimpleGraphs {
     case _          => throw new java.lang.IllegalArgumentException(t + " illegal axis type")
   }
 
+  implicit def pimpQcProjectionCount[P](data: Iterable[QcProjectionCount[P]]): QcProjectionCountDimpleChartFunctions[P] =
+    new QcProjectionCountDimpleChartFunctions[P](data)
+
   implicit def pimpCategoryCount(data: Iterable[CategoryCount]): CategoryCountDimpleChartFunctions =
     new CategoryCountDimpleChartFunctions(data)
 
@@ -47,8 +50,8 @@ class QcProjectionCountDimpleChartFunctions[P](private[this] val data: Iterable[
   def groupedBarChart(width:   Int    = 600,
                       height:  Int    = 400,
                       x_margin: Int   = 60,
-                      x_title: String = "variant type by contig",
-                      x_order: Boolean = true,
+                      x_title: String = "projection",
+                      x_order: Boolean = false,
                       y_title: String = "count",
                       y_axisType: String = "measure",
                       show_legend: Boolean = true) = {
@@ -82,6 +85,50 @@ class QcProjectionCountDimpleChartFunctions[P](private[this] val data: Iterable[
     }"""
 
     DimpleChart(data.toList, js, sizes = (width + 150, height + 150))
+  }
+
+  def lineChart(width:   Int    = DEFAULT_WIDTH,
+                height:  Int    = DEFAULT_HEIGHT,
+                x_margin: Int   = 60,
+                x_title: String = "projection",
+                y_title: String = "count",
+                x_min:   Double = 0,
+                y_min:   Double = 0,
+                smooth: Boolean = false,
+                x_axisType: String = "measure",
+                y_axisType: String = "measure",
+                show_legend: Boolean = true) = {
+
+    val addXAxis = toAxisType(x_axisType)
+    val addYAxis = toAxisType(y_axisType)
+
+    val js = s"""
+    function(data, headers, chart) {
+      chart.setBounds($x_margin, 30, $width, $height);
+
+      var x = chart.$addXAxis("x", ["projection"]);
+      x.title = "$x_title";
+      x.overrideMin = $x_min;
+
+      var y = chart.$addYAxis("y", "count");
+      y.title = "$y_title";
+      y.overrideMin = $y_min;
+
+      var s = chart.addSeries(["projection", "label"], dimple.plot.line)
+      s.addOrderRule("label");
+      if ($smooth) {
+        s.interpolation = "cardinal";
+      }
+
+      if ($show_legend) {
+        chart.addLegend($width, 10, 100, 300, "right");
+      }
+
+      chart.draw();
+    }
+    """
+
+    DimpleChart(data.toList, js, sizes = (width + MARGIN_INC, height + MARGIN_INC))
   }
 
 }
@@ -208,7 +255,7 @@ class CategoryProjectionCountDimpleGraphFunctions[P](private[this] val data: Ite
                          height:   Int   = DEFAULT_HEIGHT,
                          x_margin: Int   = 60,
                          x_title: String = "projection",
-                         y_title: String = "count",
+                         y_title: String = "percentage",
                          show_legend: Boolean = true) = {
 
     val js = s"""
@@ -221,6 +268,7 @@ class CategoryProjectionCountDimpleGraphFunctions[P](private[this] val data: Ite
 
       var y = chart.addCategoryAxis("y", ["category"]);
       y.title = "$x_title";
+      y.addOrderRule("category");
 
       var s = chart.addSeries(["category", "projection"], dimple.plot.bar)
       s.addOrderRule("projection");
@@ -291,12 +339,14 @@ class CategoryProjectionCountDimpleGraphFunctions[P](private[this] val data: Ite
 
       var x = chart.addCategoryAxis("x", ["category"]);
       x.title = "$x_title";
+      x.addOrderRule("category", "DESC");
 
       var y = chart.$addYAxis("y", "count");
       y.title = "$y_title";
       y.tickFormat = ".f";
 
       var p = chart.addMeasureAxis("p", "count");
+      p.tickFormat = ".f"
 
       var s = chart.addSeries(["category", "projection"], dimple.plot.pie)
       s.radius = $pie_radius
@@ -334,10 +384,12 @@ class CategoryProjectionCountDimpleGraphFunctions[P](private[this] val data: Ite
       var x = chart.$addXAxis("x", ["projection"]);
       x.title = "$x_title";
       x.overrideMin = $x_min;
+      x.tickFormat = ".f";
 
       var y = chart.$addYAxis("y", "count");
       y.title = "$y_title";
       y.overrideMin = $y_min;
+      y.tickFormat = ".f";
 
       var s = chart.addSeries(["projection", "category"], dimple.plot.line)
       s.addOrderRule("category");
