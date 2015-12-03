@@ -164,7 +164,9 @@ object Model extends Serializable {
 
   // ZYGOSITY
 
-  def zygosity(genotype: AnnotatedGenotype): Option[GenotypeType] = Try(genotype.getGenotype.getType).toOption
+  type Zygosity = String
+
+  def zygosity(genotype: AnnotatedGenotype): Option[Zygosity] = Try(genotype.getGenotype.getType).map(_.toString).toOption
 
   // FUNCTIONAL ANNOTATIONS
 
@@ -204,7 +206,6 @@ object Model extends Serializable {
     labels:     (Label, Label)         = ("A", "B"),
     qualities:  (Quality, Quality)     = (0, 0),
     readDepths: (ReadDepth, ReadDepth) = (1, 1),
-
     matchOnSampleId: Boolean = false,
     matchFunction: AnnotatedGenotype => Any = genotypeAlleles(_: AnnotatedGenotype),
     selectFunction: Iterable[AnnotatedGenotype] => AnnotatedGenotype = _.maxBy(quality))
