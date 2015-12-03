@@ -41,7 +41,7 @@ class VcfComparisonContextFunctions(private[this] val sc: SparkContext) extends 
     */
   def startQcComparison(vcfFileA: String, vcfFileB: String, params: ComparisonParams = ComparisonParams()) =
     qcComparison(params)(sc.loadVcf(vcfFileA, None),
-                         sc.loadVcf(vcfFileA, None))
+                         sc.loadVcf(vcfFileB, None))
 
   /**
    * @param vcfFileA
