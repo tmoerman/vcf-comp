@@ -253,9 +253,9 @@ class CategoryProjectionCountDimpleGraphFunctions[P](private[this] val data: Ite
 
   def percentageBarChart(width:    Int   = DEFAULT_WIDTH,
                          height:   Int   = DEFAULT_HEIGHT,
-                         x_margin: Int   = 60,
-                         x_title: String = "projection",
-                         y_title: String = "percentage",
+                         x_margin: Int   = 120,
+                         x_title: String = "percentage",
+                         y_title: String = "category",
                          show_legend: Boolean = true) = {
 
     val js = s"""
@@ -263,13 +263,13 @@ class CategoryProjectionCountDimpleGraphFunctions[P](private[this] val data: Ite
       chart.setBounds($x_margin, 30, $width, $height);
 
       var x = chart.addPctAxis("x", "count");
-      x.title = "$y_title";
+      x.title = "$x_title";
       x.tickFormat = "%";
 
       var y = chart.addCategoryAxis("y", ["category"]);
-      y.title = "$x_title";
+      y.title = "$y_title";
       y.addOrderRule("category");
-
+                
       var s = chart.addSeries(["category", "projection"], dimple.plot.bar)
       s.addOrderRule("projection");
 
