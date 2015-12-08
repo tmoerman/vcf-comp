@@ -7,24 +7,25 @@ import org.tmoerman.adam.fx.snpeff.SnpEffContext._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.apache.spark.{SparkContext, Logging}
 import org.tmoerman.vcf.comp.core.Model._
-import org.tmoerman.vcf.comp.core.{QCRDDFunctions, SnpComparisonRDDFunctions, SnpComparison, QC}
+import org.tmoerman.vcf.comp.core.{QcComparisonRDDFunctions, SnpComparisonRDDFunctions, SnpComparison, QcComparison}
 import SnpComparison._
-import QC._
+import QcComparison._
+import org.tmoerman.vcf.comp.util.ApiHelp
 
 /**
  * @author Thomas Moerman
  */
 object VcfComparisonContext {
 
-  implicit def toVcfComparisonContext(sc: SparkContext): VcfComparisonContext = new VcfComparisonContext(sc)
+  implicit def pimpSparkContext(sc: SparkContext): VcfComparisonContextFunctions = new VcfComparisonContextFunctions(sc)
 
-  implicit def pimpQCRDD(rdd: RDD[VariantContext]): QCRDDFunctions = new QCRDDFunctions(rdd)
+  implicit def pimpQcComparisonRDD(rdd: RDD[(Label, VariantContext)]): QcComparisonRDDFunctions = new QcComparisonRDDFunctions(rdd)
 
   implicit def pimpSnpComparisonRDD(rdd: RDD[OccurrenceRow[AnnotatedGenotype]]): SnpComparisonRDDFunctions = new SnpComparisonRDDFunctions(rdd)
 
 }
 
-class VcfComparisonContext(val sc: SparkContext) extends Serializable {
+class VcfComparisonContextFunctions(private[this] val sc: SparkContext) extends Serializable with ApiHelp {
 
   /**
    * @param vcfFile Name of the VCF file.
@@ -33,31 +34,23 @@ class VcfComparisonContext(val sc: SparkContext) extends Serializable {
   def getMetaFields(vcfFile: String): Map[String, List[String]] = meta(sc.textFile(vcfFile))
 
   /**
-    * @param vcfFile
+    * @param vcfFileA
+    * @param vcfFileB
     * @param params
     * @return Returns an RDD that acts as the basis for the Quality Control analysis.
     */
-  def startQC(vcfFile: String,
-              params: VcfQCParams = new VcfQCParams()): RDD[VariantContext] = {
-
-    val rdd = sc.loadVcf(vcfFile, None)
-
-    prep(params)(rdd)
-  }
+  def startQcComparison(vcfFileA: String, vcfFileB: String, params: ComparisonParams = ComparisonParams()) =
+    qcComparison(params)(sc.loadVcf(vcfFileA, None),
+                         sc.loadVcf(vcfFileB, None))
 
   /**
    * @param vcfFileA
    * @param vcfFileB
+   * @param params
    * @return Returns an RDD that acts as the basis for the comparison analysis.
    */
-  def startSnpComparison(vcfFileA: String,
-                         vcfFileB: String,
-                         params: SnpComparisonParams = new SnpComparisonParams()) = {
-
-    val aRDD = sc.loadAnnotatedGenotypes(vcfFileA)
-    val bRDD = sc.loadAnnotatedGenotypes(vcfFileB)
-
-    snpComparison(params)(aRDD, bRDD)
-  }
+  def startSnpComparison(vcfFileA: String, vcfFileB: String, params: ComparisonParams = ComparisonParams()) =
+    snpComparison(params)(sc.loadAnnotatedGenotypes(vcfFileA),
+                          sc.loadAnnotatedGenotypes(vcfFileB))
 
 }

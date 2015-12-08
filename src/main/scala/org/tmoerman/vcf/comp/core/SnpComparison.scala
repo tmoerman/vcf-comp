@@ -1,6 +1,5 @@
 package org.tmoerman.vcf.comp.core
 
-import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.tmoerman.adam.fx.avro.AnnotatedGenotype
 import org.tmoerman.vcf.comp.core.Model._
@@ -107,22 +106,24 @@ object SnpComparison extends Serializable {
 
 
   // tying all together
-  def snpComparison(params: SnpComparisonParams)
+  def snpComparison(params: ComparisonParams = ComparisonParams())
                    (rddA: RDD[AnnotatedGenotype],
-                    rddB: RDD[AnnotatedGenotype]): RDD[OccurrenceRow[AnnotatedGenotype]] = params match {
+                    rddB: RDD[AnnotatedGenotype]): RDD[OccurrenceRow[AnnotatedGenotype]] = {
 
-    case SnpComparisonParams(matchOnSampleId, matchFunction, selectFunction, (labelA, labelB), (qA, qB), (rdA, rdB)) =>
+    val (labelA, labelB) = params.labels
+    val (qA, qB)         = params.qualities
+    val (rdA, rdB)       = params.readDepths
 
-      def prep(q: Quality, rd: ReadDepth, rdd: RDD[AnnotatedGenotype]): RDD[(VariantKey, AnnotatedGenotype)] =
-        rdd
-          .filter(isSnp)
-          .filter(quality(_) >= q)
-          .filter(readDepth(_) >= rd)
-          .keyBy(variantKey(params.matchOnSampleId))
+    def prep(q: Quality, rd: ReadDepth, rdd: RDD[AnnotatedGenotype]): RDD[(VariantKey, AnnotatedGenotype)] =
+      rdd
+        .filter(isSnp)
+        .filter(quality(_) >= q)
+        .filter(readDepth(_) >= rd)
+        .keyBy(variantKey(params.matchOnSampleId))
 
-      prep(qA, rdA, rddA).cogroup(prep(qB, rdB, rddB))
-        .map(dropKey)
-        .map(groupByOccurrence(labelA, labelB, matchFunction, selectFunction))
+    prep(qA, rdA, rddA).cogroup(prep(qB, rdB, rddB))
+      .map(dropKey)
+      .map(groupByOccurrence(labelA, labelB, params.matchFunction, params.selectFunction))
   }
 
 }

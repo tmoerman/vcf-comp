@@ -16,6 +16,10 @@ import scala.util.Try
  */
 object Model extends Serializable {
 
+  val DEFAULT_READ_DEPTH_STEP       : ReadDepth       = 1
+  val DEFAULT_QUALITY_STEP          : Quality         = 25
+  val DEFAULT_ALLELE_FREQUENCY_STEP : AlleleFrequency = .01
+
   type Base  = String
   type Label = String
   type Count = Long
@@ -160,7 +164,9 @@ object Model extends Serializable {
 
   // ZYGOSITY
 
-  def zygosity(genotype: AnnotatedGenotype): Option[GenotypeType] = Try(genotype.getGenotype.getType).toOption
+  type Zygosity = String
+
+  def zygosity(genotype: AnnotatedGenotype): Option[Zygosity] = Try(genotype.getGenotype.getType).map(_.toString).toOption
 
   // FUNCTIONAL ANNOTATIONS
 
@@ -175,11 +181,13 @@ object Model extends Serializable {
   def transcriptBiotype(genotype: AnnotatedGenotype): String =
     genotype.getAnnotations.getFunctionalAnnotations.flatMap(e => Option(e.getTranscriptBiotype)).headOption.getOrElse(NA)
 
+
+  // TODO maybe check on all instead of head
   def isSynonymous(genotype: AnnotatedGenotype): Option[Boolean] =
     genotype.getAnnotations.getFunctionalAnnotations.map(_.getAnnotations.head).headOption.flatMap{ _ match {
       case "synonymous_variant" => Some(true)
       case "missense_variant"   => Some(false)
-      case _   => None
+      case _                    => None
     }}
 
   // ANNOTATIONS
@@ -194,16 +202,15 @@ object Model extends Serializable {
 
   // Value Holders TODO perhaps move this to separate namespace?
 
-  case class VcfQCParams(label:     Label = "X",
-                         quality:   Quality = 0,
-                         readDepth: ReadDepth = 0)
+  case class ComparisonParams(
+    labels:     (Label, Label)         = ("A", "B"),
+    qualities:  (Quality, Quality)     = (0, 0),
+    readDepths: (ReadDepth, ReadDepth) = (1, 1),
+    matchOnSampleId: Boolean = false,
+    matchFunction: AnnotatedGenotype => Any = genotypeAlleles(_: AnnotatedGenotype),
+    selectFunction: Iterable[AnnotatedGenotype] => AnnotatedGenotype = _.maxBy(quality))
 
-  case class SnpComparisonParams(matchOnSampleId: Boolean = false,
-                                 matchFunction: AnnotatedGenotype => Any = genotypeAlleles(_: AnnotatedGenotype),
-                                 selectFunction: Iterable[AnnotatedGenotype] => AnnotatedGenotype = _.maxBy(quality),
-                                 labels:     (Label, Label)         = ("A", "B"),
-                                 qualities:  (Quality, Quality)     = (0, 0),
-                                 readDepths: (ReadDepth, ReadDepth) = (1, 1))
+  case class QcProjectionCount[P](label: Label, projection: P, count: Count)
 
   case class CategoryCount(category: String, count: Count)
 

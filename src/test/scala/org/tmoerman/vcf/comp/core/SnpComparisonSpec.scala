@@ -3,8 +3,8 @@ package org.tmoerman.vcf.comp.core
 import org.tmoerman.test.spark.BaseSparkContextSpec
 
 import org.tmoerman.vcf.comp.VcfComparisonContext._
-import org.tmoerman.vcf.comp.core.Model.SnpComparisonParams
-import org.tmoerman.vcf.comp.core.SnpComparison.{CONCORDANT}
+import org.tmoerman.vcf.comp.core.Model._
+import org.tmoerman.vcf.comp.core.SnpComparison._
 
 /**
  * @author Thomas Moerman
@@ -13,7 +13,7 @@ class SnpComparisonSpec extends BaseSparkContextSpec {
 
   val annotated = "src/test/resources/small.snpEff.vcf"
 
-  val params = new SnpComparisonParams()
+  val params = new ComparisonParams()
 
   val rdd = sc.startSnpComparison(annotated, annotated, params).cache()
 

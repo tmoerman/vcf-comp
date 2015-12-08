@@ -22,7 +22,7 @@ class TumorNormalSpec extends BaseSparkContextSpec {
   val tumor  = wd + "4146_T.vcf.gz.annotated.gz"
   val normal = wd + "4146_N.vcf.gz.annotated.gz"
 
-  val params = new SnpComparisonParams(labels = ("TUMOR", "NORMAL"))
+  val params = new ComparisonParams(labels = ("TUMOR", "NORMAL"))
 
   val rdd = sc.startSnpComparison(tumor, normal, params).cache()
 
@@ -80,19 +80,27 @@ class TumorNormalSpec extends BaseSparkContextSpec {
     rdd.transcriptBiotypeCount
   }
 
-  val tumorQCparams = new VcfQCParams(label = "TUMOR")
-
-  val tumorQCrdd = sc.startQC(tumor, tumorQCparams)
+  val qcRdd = sc.startQcComparison(tumor, normal, params)
 
   "QC variant types" should "succeed" in {
-    val variantTypes = tumorQCrdd.variantTypeCount
+    val variantTypeCount = qcRdd.variantTypeCount
 
-    val multiAllelicRatio = tumorQCrdd.multiAllelicRatio()
+    val snpCountByContig = qcRdd.snpCountByContig
 
-    println(variantTypes, multiAllelicRatio)
+    val qualityDistribution = qcRdd.snpQualityDistribution()
+
+    val readDepthDistribution = qcRdd.snpReadDepthDistribution()
+
+    val indelLengths = qcRdd.indelLengthDistribution
+
+    println(
+      //variantTypeCount,
+      snpCountByContig
+      //qualityDistribution,
+      //readDepthDistribution,
+      //indelLengths
+      )
   }
-
-
 
 //  "exporting the entire data set" should "succeed" in {
 //    val headers = List(
