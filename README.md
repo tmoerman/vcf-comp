@@ -24,14 +24,16 @@ VCF-comp artifacts are published to [Bintray](https://bintray.com/tmoerman/maven
 			- [Import VCF-comp functionality](#import-vcf-comp-functionality)
 			- [Test the setup](#test-the-setup)
 	- [USAGE](#usage)
-		- [Start a QC comparison](#start-a-qc-comparison)
-		- [Start a SNP comparison](#start-a-snp-comparison)
+		- [Starting a QC comparison](#starting-a-qc-comparison)
+		- [Starting a SNP comparison](#starting-a-snp-comparison)
 	- [OVERVIEW OF ANALYSES](#overview-of-analyses)
 		- [QC analyses](#qc-analyses)
 		- [SNP comparison analyses](#snp-comparison-analyses)
 	- [HOW IT WORKS](#how-it-works)
 		- [Pimp my library](#pimp-my-library)
 		- [Dimple.js](#dimplejs)
+
+<!-- /TOC -->
 
 ## GETTING STARTED
 
@@ -130,7 +132,7 @@ val normal = workDir + "normal.vcf"
 
 We can now start two types of VCF comparison: a quality control (QC) comparison and a SNP comparison. Let's start with a QC comparison.
 
-### Start a QC comparison
+### Starting a QC comparison
 
 To start a QC comparison, we invoke the appropriate method on the SparkContext instance `sc`. Remember, as previously mentioned, we can always invoke the `.help` method on different objects in the analysis, to give us a list of methods available at that point. Let's do that one more time:
 
@@ -217,19 +219,88 @@ This sequence of steps illustrates the primary usage pattern of the VCF-comp lib
 
 Let's now apply this for a SNP comparison.
 
-### Start a SNP comparison
+### Starting a SNP comparison
 
 Analogously, we launch a SNP comparison.
 
-`TODO`
+```Scala
+val snpParams = new ComparisonParams(labels = ("TUMOR", "NORMAL"))
 
+val snpComparison = sc.startSnpComparison(tumor, normal, snpParams) // a Spark RDD
+											.cache()																		  // cache the RDD		
+```
+
+In the same spirit as the QC example, we create a Spark RDD instance by invoking the `startSnpComparison` function on the SparkContext `sc`. Analogously, we can inspect the list of available functions by invoking the `.help` function on the `snpComparison` value.
+
+```Scala
+snpComparison.help
+```
+```
+res17: String =
+- alleleFrequencyDistribution
+- allelesSwitchCount
+- baseChangeCount
+- baseChangePatternCount
+- baseChangeTypeCount
+- categoryCount
+- clinvarRatio
+- commonSnpRatio
+- countByProjection
+- countBySwitch
+- countByTraversableProjection
+- functionalAnnotationCount
+- functionalImpactCount
+- qualityDistribution
+- readDepthDistribution
+- synonymousRatio
+- transcriptBiotypeCount
+- viewOnly
+- zygosityCount
+- zygositySwitchCount
+```
+
+Let's choose the `readDepthDistribution` analysis, and inspect which visualizations are available. Note that not all visualization make sense for a "distribution" type analysis.
+
+```Scala
+snpComparison.readDepthDistribution().help
+```
+```
+res21: String =
+- groupedBarChart
+- lineChart
+- lollipopPieChart
+- percentageBarChart
+- stackedBarChart
+- table
+```
+
+In this case, a line chart makes most sense, so let's try that.
+
+```Scala
+snpComparison.readDepthDistribution(step = 5)
+             .lineChart(width = 700,
+							 					x_title = "read depth distribution")
+```
+
+![RD](img/readDepth.png)
+
+Sweet!
+
+Notice that again, we have overridden some of the default arguments in both the `readDepthDistribution` as well as the `lineChart` methods. Check the documentation for more information about which arguments are available on the analysis methods.
+
+This concludes two examples of how to launch a QC comparison and a SNP comparison. The next section deals with the core concept of the SNP comparison functionality: the 5 concordance categories.
+
+## CONCORDANCE CATEGORIES
+
+`TODO`
 
 ## OVERVIEW OF ANALYSES
 
 ### QC analyses
 
-### SNP comparison analyses
+`TODO`
 
+### SNP comparison analyses
 
 `TODO`
 
