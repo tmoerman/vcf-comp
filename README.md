@@ -1,39 +1,40 @@
 ![venn](img/venn.png)
 
 # VCF-comp
---
 
 VCF-comp is a [Scala](http://www.scala-lang.org/) library for pairwise comparison of annotated [VCF](http://samtools.github.io/hts-specs/VCFv4.2.pdf) files. Uses [Apache Spark](http://spark.apache.org/), [ADAM](https://github.com/bigdatagenomics/adam) and [adam-fx](https://github.com/tmoerman/adam-fx).
 
 VCF-comp is intended for performing VCF analyses within a [Spark-notebook](https://github.com/andypetrella/spark-notebook) environment.
 
-VCF-comp is open source software, available on both [Github](https://github.com/tmoerman/vcf-comp) and [BitBucket](https://bitbucket.org/vda-lab/vcf-comp). 
+VCF-comp is open source software, available on both [Github](https://github.com/tmoerman/vcf-comp) and [BitBucket](https://bitbucket.org/vda-lab/vcf-comp).
 
 VCF-comp artifacts are published to [Bintray](https://bintray.com/tmoerman/maven/vcf-comp). Latest version: `0.3`
 
-<!-- http://doctoc.herokuapp.com/ -->
-
 --
 
-- [VCF-comp](#)
-	- [GETTING STARTED](#)
-		- [Using the Docker image](#)
-		- [Manual setup](#)
-			- [Remote artifact repository](#)
-			- [Library dependencies](#)
-			- [Initialize the SparkContext](#)
-			- [Import VCF-comp functionality](#)
-			- [Test the setup](#)
-	- [USAGE](#)
-		- [Start a QC comparison](#)
-		- [Start a SNP comparison](#)
-		- [Discoverable API](#)
-	- [ADVANCED USAGE](#)
-	- [HOW IT WORKS](#)
-		- [Pimp my library](#)
-		- [Dimple.js](#)
+<!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
+
+- [VCF-comp](#vcf-comp)
+	- [GETTING STARTED](#getting-started)
+		- [Using the Docker image](#using-the-docker-image)
+		- [Manual setup](#manual-setup)
+			- [Remote artifact repository](#remote-artifact-repository)
+			- [Library dependencies](#library-dependencies)
+			- [Initialize the SparkContext](#initialize-the-sparkcontext)
+			- [Import VCF-comp functionality](#import-vcf-comp-functionality)
+			- [Test the setup](#test-the-setup)
+	- [USAGE](#usage)
+		- [Start a QC comparison](#start-a-qc-comparison)
+		- [Start a SNP comparison](#start-a-snp-comparison)
+	- [OVERVIEW OF ANALYSES](#overview-of-analyses)
+		- [QC analyses](#qc-analyses)
+		- [SNP comparison analyses](#snp-comparison-analyses)
+	- [HOW IT WORKS](#how-it-works)
+		- [Pimp my library](#pimp-my-library)
+		- [Dimple.js](#dimplejs)
 
 ## GETTING STARTED
+
 ### Using the Docker image
 
 `TODO`
@@ -54,7 +55,7 @@ First, we specify the remote Maven [repository](https://bintray.com/tmoerman/mav
 
 #### Library dependencies
 
-Next, we specify the library dependencies. We need both the VCF-comp library and the BDGenomics Adam library, but without Hadoop and Spark dependencies, because these are already provided automatically in the Spark Notebook environment. 
+Next, we specify the library dependencies. We need both the VCF-comp library and the BDGenomics Adam library, but without Hadoop and Spark dependencies, because these are already provided automatically in the Spark Notebook environment.
 
 ```
 :dp org.tmoerman % vcf-comp_2.10 % 0.3
@@ -81,7 +82,7 @@ reset(lastChanges = _.set("spark.app.name", "My VCF analysis")
 
 #### Import VCF-comp functionality
 
-Almost there! The final setup step is to import the necessary VCF-comp classes and functions. 
+Almost there! The final setup step is to import the necessary VCF-comp classes and functions.
 
 ```
 import org.tmoerman.vcf.comp.VcfComparisonContext._
@@ -91,7 +92,7 @@ import org.tmoerman.vcf.comp.viz.SparkNoteBookDimpleGraphs._
 import org.tmoerman.adam.fx.avro.AnnotatedGenotype
 
 implicit def toDimpleChart(chart: DimpleChart) = chart match {
-  case DimpleChart(data, js, s) => DiyChart(data, js, maxPoints = chart.maxPoints, sizes = s) 
+  case DimpleChart(data, js, s) => DiyChart(data, js, maxPoints = chart.maxPoints, sizes = s)
 }
 ```
 
@@ -106,7 +107,7 @@ sc.help
 This method should return a list of methods we can invoke on the SparkContext:
 
 ```
-res9: String = 
+res9: String =
 - getMetaFields
 - startQcComparison
 - startSnpComparison
@@ -121,7 +122,7 @@ Well done! We are now ready to perform an actual pairwise VCF comparison analysi
 VCF-comp focuses on pairwise comparison of VCF files, so let's get two interesting files ready: `tumor.vcf` and `normal.vcf`. In this example, we read these files from [HDFS](https://hadoop.apache.org/docs/r1.2.1/hdfs_design.html):
 
 ```Scala
-val workDir = "hdfs://bla:54310/my-data/VCF/" 
+val workDir = "hdfs://bla:54310/my-data/VCF/"
 
 val tumor  = workDir + "tumor.vcf"
 val normal = workDir + "normal.vcf"
@@ -131,13 +132,13 @@ We can now start two types of VCF comparison: a quality control (QC) comparison 
 
 ### Start a QC comparison
 
-In order to start a QC comparison, we invoke the appropriate method on the SparkContext instance `sc`. Remember, as previously mentioned, we can always invoke the `.help` method on different objects in the analysis, to give us a list of methods available at that point. Let's do that one more time:
+To start a QC comparison, we invoke the appropriate method on the SparkContext instance `sc`. Remember, as previously mentioned, we can always invoke the `.help` method on different objects in the analysis, to give us a list of methods available at that point. Let's do that one more time:
 
 ```Scala
 sc.help
 ```
 ```
-res9: String = 
+res9: String =
 - getMetaFields
 - startQcComparison
 - startSnpComparison
@@ -160,7 +161,7 @@ Let's once again use the `.help` method to discover how we can proceed. This tim
 qcComparison.help
 ```
 ```
-res11: String = 
+res11: String =
 - countByProjection
 - countByTraversableProjection
 - indelLengthDistribution
@@ -179,11 +180,11 @@ qcComparison.snpCountByContig
 Oops, now we get some gobbledigook:
 
 ```
-res16: Iterable[org.tmoerman.vcf.comp.core.Model.QcProjectionCount[String]] = List(QcProjectionCount(NORMAL,9,1361), 
-QcProjectionCount(NORMAL,1,3304), QcProjectionCount(TUMOR,20,844), QcProjectionCount(NORMAL,12,1564), 
-QcProjectionCount(TUMOR,19,2607), QcProjectionCount(TUMOR,21,476), QcProjectionCount(TUMOR,1,3376), 
-QcProjectionCount(TUMOR,13,547), QcProjectionCount(TUMOR,Y,12), QcProjectionCount(NORMAL,11,2300), 
-QcProjectionCount(TUMOR,22,733), QcProjectionCount(NORMAL,2,2197), QcProjectionCount(TUMOR,12,1520), 
+res16: Iterable[org.tmoerman.vcf.comp.core.Model.QcProjectionCount[String]] = List(QcProjectionCount(NORMAL,9,1361),
+QcProjectionCount(NORMAL,1,3304), QcProjectionCount(TUMOR,20,844), QcProjectionCount(NORMAL,12,1564),
+QcProjectionCount(TUMOR,19,2607), QcProjectionCount(TUMOR,21,476), QcProjectionCount(TUMOR,1,3376),
+QcProjectionCount(TUMOR,13,547), QcProjectionCount(TUMOR,Y,12), QcProjectionCount(NORMAL,11,2300),
+QcProjectionCount(TUMOR,22,733), QcProjectionCount(NORMAL,2,2197), QcProjectionCount(TUMOR,12,1520),
 QcProjectionCount(NORMAL,7,1522), QcProjectionCount(NORMAL,16,1387), QcProjectionCount(NORMAL,18,54...
 ```
 
@@ -193,7 +194,7 @@ That doesn't look right, we'd prefer to see some graphical output. Let's consult
 qcComparison.snpCountByContig.help
 ```
 ```
-res17: String = 
+res17: String =
 - groupedBarChart
 - lineChart
 ```
@@ -202,7 +203,7 @@ Okay, a histogram is probably the most sensible chart for a SNP count by contig,
 
 ```Scala
 qcComparison.snpCountByContig
-            .groupedBarChart(x_title = "SNP count by contig", 
+            .groupedBarChart(x_title = "SNP count by contig",
                              x_order = true)
 ```
 
@@ -212,18 +213,22 @@ We also specified some overriding attributes of the grouped bar chart. The resul
 
 Nice!
 
-This sequence of steps illustrates the primary usage pattern of the VCF-comp library.
+This sequence of steps illustrates the primary usage pattern of the VCF-comp library. See section [QC analyses](#) for an overview of QC functionality.
 
 Let's now apply this for a SNP comparison.
 
 ### Start a SNP comparison
 
+Analogously, we launch a SNP comparison.
+
 `TODO`
 
 
-## OVERVIEW OF AVAILABLE ANALYSES
+## OVERVIEW OF ANALYSES
 
+### QC analyses
 
+### SNP comparison analyses
 
 
 `TODO`
@@ -239,4 +244,3 @@ VCF-comp makes use of a Scala idiom called [*"Pimp my library"*](http://www.arti
 ### Dimple.js
 
 `TODO`
-
