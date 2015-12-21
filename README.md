@@ -26,6 +26,7 @@ VCF-comp artifacts are published to [Bintray](https://bintray.com/tmoerman/maven
 	- [USAGE](#usage)
 		- [Starting a QC comparison](#starting-a-qc-comparison)
 		- [Starting a SNP comparison](#starting-a-snp-comparison)
+	- [CONCORDANCE CATEGORIES](#concordance-categories)
 	- [OVERVIEW OF ANALYSES](#overview-of-analyses)
 		- [QC analyses](#qc-analyses)
 		- [SNP comparison analyses](#snp-comparison-analyses)
@@ -227,7 +228,7 @@ Analogously, we launch a SNP comparison.
 val snpParams = new ComparisonParams(labels = ("TUMOR", "NORMAL"))
 
 val snpComparison = sc.startSnpComparison(tumor, normal, snpParams) // a Spark RDD
-											.cache()																		  // cache the RDD		
+                      .cache()                                      // cache the RDD		
 ```
 
 In the same spirit as the QC example, we create a Spark RDD instance by invoking the `startSnpComparison` function on the SparkContext `sc`. Analogously, we can inspect the list of available functions by invoking the `.help` function on the `snpComparison` value.
@@ -279,7 +280,7 @@ In this case, a line chart makes most sense, so let's try that.
 ```Scala
 snpComparison.readDepthDistribution(step = 5)
              .lineChart(width = 700,
-							 					x_title = "read depth distribution")
+                        x_title = "read depth distribution")
 ```
 
 ![RD](img/readDepth.png)
