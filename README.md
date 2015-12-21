@@ -1,6 +1,7 @@
-# VCF-comp
-
 ![venn](img/venn.png)
+
+# VCF-comp
+--
 
 VCF-comp is a [Scala](http://www.scala-lang.org/) library for pairwise comparison of annotated [VCF](http://samtools.github.io/hts-specs/VCFv4.2.pdf) files. Uses [Apache Spark](http://spark.apache.org/), [ADAM](https://github.com/bigdatagenomics/adam) and [adam-fx](https://github.com/tmoerman/adam-fx).
 
@@ -10,9 +11,27 @@ VCF-comp is open source software, available on both [Github](https://github.com/
 
 VCF-comp artifacts are published to [Bintray](https://bintray.com/tmoerman/maven/vcf-comp). Latest version: `0.3`
 
-## TOC
-
 <!-- http://doctoc.herokuapp.com/ -->
+
+--
+
+- [VCF-comp](#)
+	- [GETTING STARTED](#)
+		- [Using the Docker image](#)
+		- [Manual setup](#)
+			- [Remote artifact repository](#)
+			- [Library dependencies](#)
+			- [Initialize the SparkContext](#)
+			- [Import VCF-comp functionality](#)
+			- [Test the setup](#)
+	- [USAGE](#)
+		- [Start a QC comparison](#)
+		- [Start a SNP comparison](#)
+		- [Discoverable API](#)
+	- [ADVANCED USAGE](#)
+	- [HOW IT WORKS](#)
+		- [Pimp my library](#)
+		- [Dimple.js](#)
 
 ## GETTING STARTED
 ### Using the Docker image
@@ -201,11 +220,11 @@ Let's now apply this for a SNP comparison.
 
 `TODO`
 
-### Discoverable API
 
-`TODO`
+## OVERVIEW OF AVAILABLE ANALYSES
 
-## ADVANCED USAGE
+
+
 
 `TODO`
 
