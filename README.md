@@ -309,8 +309,8 @@ The heart of VCF-comp is an algorithm that matches variants per position by conc
 | `A-unique`   | File A has a variant on this position, file B does not                                  |
 | `B-unique`   | File B has a variant on this position, file A does not                                  |
 | `Concordant` | Both file A and B have the same variant on this position, with respect to the matching criterion. A concordant variant is counted once. |
-| <nobr>`A-discordant`</nobr> | File A and B have a variant on this position, but do not agree with respect to the matching criterion. This variant is the one from file A. |
-| <nobr>`B-discordant`</nobr> | File A and B have a variant on this position, but do not agree with respect to the matching criterion. This variant is the one from file B. |
+| `A-discordant` | File A and B have a variant on this position, but do not agree with respect to the matching criterion. This variant is the one from file A. |
+| `B-discordant` | File A and B have a variant on this position, but do not agree with respect to the matching criterion. This variant is the one from file B. |
 
 The default matching criterion is: matching **genotype alleles** in both files A and B.
 
