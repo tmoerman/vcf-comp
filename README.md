@@ -304,13 +304,13 @@ This concludes two examples of how to launch a QC comparison and a SNP compariso
 
 The heart of VCF-comp is an algorithm that matches variants per position by concordance. By concordance, we mean a degree to which both files agree about the variants or their genotypes on that position, according to a configurable matching criterion. VCF-comp defines 5 categories:
 
-| name       | meaning                                                                                 |
-| ---        | ---                                                                                     |
-| `A-unique`   | File A has a variant on this position, file B does not                                  |
-| `B-unique`   | File B has a variant on this position, file A does not                                  |
-| `Concordant` | Both file A and B have the same variant on this position, with respect to the matching criterion. A concordant variant is counted once. |
-| `A-discordant` | File A and B have a variant on this position, but do not agree with respect to the matching criterion. This variant is the one from file A. |
-| `B-discordant` | File A and B have a variant on this position, but do not agree with respect to the matching criterion. This variant is the one from file B. |
+name              | meaning          
+----------------- | ---
+`A-unique`        | File A has a variant on this position, file B does not                                  
+`B-unique`        | File B has a variant on this position, file A does not                                  
+`Concordant`      | Both file A and B have the same variant on this position with respect <br/> to the matching criterion. A concordant variant is counted once.
+`A-discordant`    | File A and B have a variant on this position, but do not agree with <br/> respect to the matching criterion. This variant is the one from file A.
+`B-discordant`    | File A and B have a variant on this position, but do not agree with <br/> respect to the matching criterion. This variant is the one from file B.
 
 The default matching criterion is: matching **genotype alleles** in both files A and B.
 
