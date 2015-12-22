@@ -28,8 +28,13 @@ VCF-comp artifacts are published to [Bintray](https://bintray.com/tmoerman/maven
 		- [Starting a SNP comparison](#starting-a-snp-comparison)
 	- [CONCORDANCE CATEGORIES](#concordance-categories)
 	- [OVERVIEW OF ANALYSES](#overview-of-analyses)
-		- [QC analyses](#qc-analyses)
-		- [SNP comparison analyses](#snp-comparison-analyses)
+		- [QC](#qc)
+			- [QC analyses](#qc-analyses)
+			- [QC analysis building blocks](#qc-analysis-building-blocks)
+		- [SNP comparison](#snp-comparison)
+			- [SNP comparison analyses](#snp-comparison-analyses)
+			- [SNP comparison building blocks](#snp-comparison-building-blocks)
+		- [Visualizations](#visualizations)
 	- [HOW IT WORKS](#how-it-works)
 		- [Pimp my library](#pimp-my-library)
 		- [Dimple.js](#dimplejs)
@@ -324,13 +329,135 @@ The `matchFunction` is the function used in the matching algorithm to determine 
 
 Here we have overridden it with a function that takes an `AnnotatedGenotype` and returns the alternate allele of the variant associated with the genotype. This is a less strict matching criterion than the default one, and could be useful for a particular analysis.
 
+Note that overriding the `matchFunction` only affects the balance between concordant and discordant variants. The unique variants remain stable.
+
 ## OVERVIEW OF ANALYSES
 
-### QC analyses
+This section contains an overview of all available analyses. Additionally, the [higher-order](https://en.wikipedia.org/wiki/Higher-order_function) functions that act as building blocks for the available analyses and ad-hoc analyses are discussed. Using the building block functions requires a more advanced mastery of the Scala language.
 
-`TODO`
+`TODO` *(Scala docs will be hosted on a dedicated site in the near future.)*
 
-### SNP comparison analyses
+### QC
+
+#### QC analyses
+
+```Scala
+variantTypeCount
+```
+
+```Scala
+snpCountByContig
+```
+
+```Scala
+snpReadDepthDistribution(step: Int = DEFAULT_READ_DEPTH_STEP)
+```
+
+```Scala
+def snpQualityDistribution(step: Double = DEFAULT_QUALITY_STEP)
+```
+
+```Scala
+def indelLengthDistribution
+```
+
+#### QC analysis building blocks
+
+```Scala
+def countByProjection[P: ClassTag](projection: VariantContext => P): Iterable[QcProjectionCount[P]]
+```
+
+```Scala
+def countByTraversableProjection[P: ClassTag](projection: VariantContext => Traversable[P]): Iterable[QcProjectionCount[P]]
+```
+
+### SNP comparison
+
+#### SNP comparison analyses
+
+```Scala
+def viewOnly(occurrences: String*)
+```
+
+```Scala
+def categoryCount
+```
+
+```Scala
+def baseChangeCount
+```
+
+```Scala
+def baseChangePatternCount
+```
+
+```Scala
+def baseChangeTypeCount
+```
+
+```Scala
+def zygosityCount
+```
+
+```Scala
+def functionalImpactCount
+```
+
+```Scala
+def functionalAnnotationCount
+```
+
+```Scala
+def transcriptBiotypeCount
+```
+
+```Scala
+def clinvarRatio()
+```
+
+```Scala
+def commonSnpRatio()
+```
+
+```Scala
+def synonymousRatio()
+```
+
+```Scala
+def readDepthDistribution(step: Int = DEFAULT_READ_DEPTH_STEP)
+```  
+
+```Scala
+def qualityDistribution(step: Double = DEFAULT_QUALITY_STEP)
+```
+
+```Scala
+def alleleFrequencyDistribution(step: Double = DEFAULT_ALLELE_FREQUENCY_STEP)
+```
+
+```Scala
+def zygositySwitchCount
+```
+
+```Scala
+def allelesSwitchCount
+```
+
+#### SNP comparison building blocks
+
+```Scala
+def countByProjection[P](projection: AnnotatedGenotype => P): Iterable[CategoryProjectionCount[P]]
+```
+
+```Scala
+def countByTraversableProjection[P](projection: AnnotatedGenotype => Traversable[P]): Iterable[CategoryProjectionCount[P]]
+```
+
+```Scala  
+def countBySwitch[P](projection: AnnotatedGenotype => Option[P]): Iterable[CategoryProjectionCount[String]]
+```
+
+### Visualizations
 
 `TODO`
 
