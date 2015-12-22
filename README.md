@@ -4,7 +4,7 @@
 
 VCF-comp is a [Scala](http://www.scala-lang.org/) library for pairwise comparison of annotated [VCF](http://samtools.github.io/hts-specs/VCFv4.2.pdf) files. Uses [Apache Spark](http://spark.apache.org/), [ADAM](https://github.com/bigdatagenomics/adam) and [adam-fx](https://github.com/tmoerman/adam-fx).
 
-VCF-comp is intended for performing VCF analyses within a [Spark-notebook](https://github.com/andypetrella/spark-notebook) environment.
+VCF-comp is intended for performing VCF analyses using the Scala programming language within a [Spark-notebook](https://github.com/andypetrella/spark-notebook) environment.
 
 VCF-comp is open source software, available on both [Github](https://github.com/tmoerman/vcf-comp) and [BitBucket](https://bitbucket.org/vda-lab/vcf-comp).
 
@@ -122,6 +122,10 @@ Well done! We are now ready to perform an actual pairwise VCF comparison analysi
 
 ## USAGE
 
+Some proficiency in [Scala](http://www.scala-lang.org/) is expected. Don't worry, the level of Scala programming required to effectively use this library is quite basic. If you have some experience with Java, Python, C++ or C#, most of the code in this tutorial will feel very familiar.
+
+The motivation for adopting a programmatic Notebook approach in this tool is because this is essentially a *data science* tool. Data science tools ideally show exactly how an analysis has been performed, by making the individual steps explicit as code. Although the threshold to get started is higher than a point-and-click interface, this disadvantage is outweighed in the long run by the benefits of the reproducible nature of a notebook approach.
+
 VCF-comp focuses on pairwise comparison of VCF files, so let's get two interesting files ready: `tumor.vcf` and `normal.vcf`. In this example, we read these files from [HDFS](https://hadoop.apache.org/docs/r1.2.1/hdfs_design.html):
 
 ```Scala
@@ -210,7 +214,7 @@ qcComparison.snpCountByContig
                              x_order = true)
 ```
 
-We also specified some overriding attributes of the grouped bar chart. The result is automagically turned into a chart.
+We also specified some overriding attributes of the grouped bar chart. The result is an object that is automagically turned into a chart by the notebook.
 
 ![chart](img/snpCount.png)
 
@@ -293,7 +297,32 @@ This concludes two examples of how to launch a QC comparison and a SNP compariso
 
 ## CONCORDANCE CATEGORIES
 
-`TODO`
+The heart of VCF-comp is an algorithm that matches variants per position by concordance. By concordance, we mean a degree to which both files agree about the variants or their genotypes on that position, according to a configurable matching criterion. VCF-comp defines 5 categories:
+
+| name       | meaning                                                                                 |
+| ---        | ---                                                                                     |
+| A-unique   | File A has a variant on this position, file B does not                                  |
+| B-unique   | File B has a variant on this position, file A does not                                  |
+| Concordant | Both file A and B have the same variant on this position, with respect to the matching criterion. A concordant variant is counted once. |
+| A-discordant | File A and B have a variant on this position, but do not agree with respect to the matching criterion. This variant is the one from file A. |
+| B-discordant | File A and B have a variant on this position, but do not agree with respect to the matching criterion. This variant is the one from file B. |
+
+The default matching criterion is: matching **genotype alleles** in both files A and B.
+
+In our opinion, this is the most sensible default behaviour. However, a researcher might want to define a different matching criterion. This is possible. The `ComparisonParams` class defines the default behaviour, but this is overridable, as illustrated in following example:
+
+```Scala
+val snpParamsAA = new ComparisonParams(
+  labels = ("TUMOR", "NORMAL"),
+  matchFunction = (gt: AnnotatedGenotype) => gt.getGenotype.getVariant.getAlternateAllele) // overridden match function
+
+val snpComparisonAA = sc.startSnpComparison(tumor, normal, snpParamsAA)
+                        .cache()
+```
+
+The `matchFunction` is the function used in the matching algorithm to determine concordance. The matchFunction can return anything, or in Scala jargon: the function has the `Any` return type. If file A and B have a variant on a position, this function is applied on the corresponding genotypes and the results are compared for equality. If the results are equal we have a concordant variant, if they are not equal we have two discordant variants.
+
+Here we have overridden it with a function that takes an `AnnotatedGenotype` and returns the alternate allele of the variant associated with the genotype. This is a less strict matching criterion than the default one, and could be useful for a particular analysis.
 
 ## OVERVIEW OF ANALYSES
 
