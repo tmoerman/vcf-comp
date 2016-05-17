@@ -1,7 +1,7 @@
 package org.tmoerman.vcf.comp
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.VariantContext
+import org.bdgenomics.adam.models.{ReferenceRegion, VariantContext}
 import org.tmoerman.adam.fx.avro.AnnotatedGenotype
 import org.tmoerman.adam.fx.snpeff.SnpEffContext._
 import org.bdgenomics.adam.rdd.ADAMContext._
@@ -52,5 +52,12 @@ class VcfComparisonContextFunctions(private[this] val sc: SparkContext) extends 
   def startSnpComparison(vcfFileA: String, vcfFileB: String, params: ComparisonParams = ComparisonParams()) =
     snpComparison(params)(sc.loadAnnotatedGenotypes(vcfFileA),
                           sc.loadAnnotatedGenotypes(vcfFileB))
+
+  /**
+    * @param bedFile
+    * @return Returns an RDD of Features by Reference region
+    */
+  def loadFeatures(bedFile: String) = sc.loadBED(bedFile).keyBy(ReferenceRegion(_))
+
 
 }
