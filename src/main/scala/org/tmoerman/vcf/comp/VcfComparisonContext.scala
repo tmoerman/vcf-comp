@@ -57,7 +57,7 @@ class VcfComparisonContextFunctions(private[this] val sc: SparkContext) extends 
     * @param bedFile
     * @return Returns an RDD of Features by Reference region
     */
-  def loadFeatures(bedFile: String) = sc.loadBED(bedFile).keyBy(ReferenceRegion(_))
+  def loadFeaturesByRegion(bedFile: String) = sc.loadFeatures(bedFile).keyBy(ReferenceRegion(_))
 
 
 }
