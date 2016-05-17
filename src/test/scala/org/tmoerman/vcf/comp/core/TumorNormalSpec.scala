@@ -14,13 +14,14 @@ import org.tmoerman.adam.fx.snpeff.SnpEffContext._
  */
 class TumorNormalSpec extends BaseSparkContextSpec {
 
-  val wd = "/Users/tmo/Work/exascience/data/VCF-comp/tumor.normal/"
+  val wd = "/Users/tmo/Work/exascience/data/VCF-comp"
   val out = wd + "report.v5/"
 
   new File(out).mkdir()
 
-  val tumor  = wd + "4146_T.vcf.gz.annotated.gz"
-  val normal = wd + "4146_N.vcf.gz.annotated.gz"
+  val tumor  = wd + "/tumor.normal/4146_T.vcf.gz.annotated.gz"
+  val normal = wd + "/tumor.normal/4146_N.vcf.gz.annotated.gz"
+  val truX   = wd + "/bed/TruSeq_Exome_b37.bed"
 
   val params = new ComparisonParams(labels = ("TUMOR", "NORMAL"))
 
@@ -78,6 +79,14 @@ class TumorNormalSpec extends BaseSparkContextSpec {
 
   "transcript biotype count" should "succeed" in {
     rdd.transcriptBiotypeCount
+  }
+
+  "filtering by gene name" should "succeed" in {
+    import org.tmoerman.vcf.comp.VcfComparisonContext._
+
+    val bed = sc.loadFeaturesByRegion(truX)
+
+    rdd.filterByGene("hox")(bed)
   }
 
   val qcRdd = sc.startQcComparison(tumor, normal, params)
