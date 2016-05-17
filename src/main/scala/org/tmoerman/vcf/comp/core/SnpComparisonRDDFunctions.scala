@@ -162,7 +162,11 @@ class SnpComparisonRDDFunctions(private[this] val rdd: RDD[OccurrenceRow[Annotat
       .countByValue
       .map{ case ((cat, p), count) => CategoryProjectionCount(cat, p, count) }
 
-  private def toRegion(g: AnnotatedGenotype): ReferenceRegion = {
+  private implicit class StringHelpers(s1: String) {
+    def matches(s2: String) = s1.toLowerCase.startsWith(s2.toLowerCase)
+  }
+
+  private def region(g: AnnotatedGenotype): ReferenceRegion = {
     val variant = g.getGenotype.getVariant
 
     ReferenceRegion(
@@ -171,26 +175,52 @@ class SnpComparisonRDDFunctions(private[this] val rdd: RDD[OccurrenceRow[Annotat
       variant.getEnd)
   }
 
-  def filterByGenes(queryGeneNames: String*)
-                   (implicit featureRDD: RDD[Feature]): RDD[OccurrenceRow[AnnotatedGenotype]] = {
+  /**
+    * @param queryGeneNames
+    * @param featuresByRegionRDD
+    * @return Returns an RDD of rows that match the specified contig.
+    */
+  def filterByGene(queryGeneNames: String*)
+                  (implicit featuresByRegionRDD: RDD[(ReferenceRegion, Feature)]) = filterByGenes(queryGeneNames)
 
-    val featureByRegionRDD: RDD[(ReferenceRegion, Feature)] =
-      featureRDD
-        .filter(feature =>
+  def filterByGenes(queryGeneNames: Iterable[String])
+                   (implicit featuresByRegionRDD: RDD[(ReferenceRegion, Feature)]) = {
+
+    val filteredFeaturesRDD =
+      featuresByRegionRDD
+        .filter{ case (region, feature) =>
           queryGeneNames.exists(queryGene =>
-            feature.getFeatureType.equalsIgnoreCase(queryGene)))
-        .keyBy(ReferenceRegion(_))
+            feature.getFeatureType.matches(queryGene)) }
 
-    val occurrenceRowByRegionRDD =
+    val occurrenceRowsByRegionRDD =
       rdd.flatMap(row =>
         flattenToReps()(row)
-          .map{ case (_, genotype) => toRegion(genotype) }
+          .map{ case (_, genotype) => region(genotype) }
           .map(region => (region, row)))
 
     BroadcastRegionJoin
-      .partitionAndJoin(featureByRegionRDD, occurrenceRowByRegionRDD)
+      .partitionAndJoin(filteredFeaturesRDD, occurrenceRowsByRegionRDD)
       .values
   }
+
+  private def contig(g: AnnotatedGenotype) =
+    g.getGenotype.getVariant.getContig.getContigName
+
+  /**
+    * @param contigNames
+    * @return Returns an RDD of rows that match the specified contig.
+    */
+  def filterByContig(contigNames: String*) = filterByContigs(contigNames)
+
+  /**
+    * @param contigNames
+    * @return Returns an RDD of rows that match the specified list of contigs.
+    */
+  def filterByContigs(contigNames: Iterable[String]) =
+    rdd.filter(row =>
+      flattenToReps()(row)
+        .map{ case (_, genotype) => contig(genotype) }
+        .exists(candidateContig => contigNames.exists(_.matches(candidateContig))))
 
   def countBySwitch[P](projection: AnnotatedGenotype => Option[P]): Iterable[CategoryProjectionCount[String]] =
     rdd
