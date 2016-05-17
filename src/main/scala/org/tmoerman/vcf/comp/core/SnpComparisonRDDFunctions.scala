@@ -162,9 +162,7 @@ class SnpComparisonRDDFunctions(private[this] val rdd: RDD[OccurrenceRow[Annotat
       .countByValue
       .map{ case ((cat, p), count) => CategoryProjectionCount(cat, p, count) }
 
-  private implicit class StringHelpers(s1: String) {
-    def matches(s2: String) = s1.toLowerCase.startsWith(s2.toLowerCase)
-  }
+  def matchesStart(s1: String, s2: String) = s1.toLowerCase.startsWith(s2.toLowerCase)
 
   private def region(g: AnnotatedGenotype): ReferenceRegion = {
     val variant = g.getGenotype.getVariant
@@ -190,8 +188,8 @@ class SnpComparisonRDDFunctions(private[this] val rdd: RDD[OccurrenceRow[Annotat
       featuresByRegionRDD
         .filter{ case (region, feature) =>
           queryGeneNames.exists(queryGene =>
-            feature.getFeatureType.matches(queryGene)) }
-
+            matchesStart(feature.getFeatureType, queryGene)) }
+    
     val occurrenceRowsByRegionRDD =
       rdd.flatMap(row =>
         flattenToReps()(row)
@@ -220,7 +218,7 @@ class SnpComparisonRDDFunctions(private[this] val rdd: RDD[OccurrenceRow[Annotat
     rdd.filter(row =>
       flattenToReps()(row)
         .map{ case (_, genotype) => contig(genotype) }
-        .exists(candidateContig => contigNames.exists(_.matches(candidateContig))))
+        .exists(candidateContig => contigNames.exists(contigName => matchesStart(candidateContig, contigName))))
 
   def countBySwitch[P](projection: AnnotatedGenotype => Option[P]): Iterable[CategoryProjectionCount[String]] =
     rdd
