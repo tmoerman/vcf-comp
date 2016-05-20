@@ -8,13 +8,14 @@ VCF-comp is intended for performing VCF analyses using the Scala programming lan
 
 VCF-comp is open source software, available on both [Github](https://github.com/tmoerman/vcf-comp) and [BitBucket](https://bitbucket.org/vda-lab/vcf-comp).
 
-VCF-comp artifacts are published to [Bintray](https://bintray.com/tmoerman/maven/vcf-comp). Latest version: `0.3.2`
+VCF-comp artifacts are published to [Bintray](https://bintray.com/tmoerman/maven/vcf-comp). Latest version: `0.4.0`
 
 --
 
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
 - [VCF-comp](#vcf-comp)
+    - [CHANGE NOTES](#change-notes)
 	- [GETTING STARTED](#getting-started)
 		- [Using the Docker image](#using-the-docker-image)
 		- [Manual setup](#manual-setup)
@@ -41,6 +42,13 @@ VCF-comp artifacts are published to [Bintray](https://bintray.com/tmoerman/maven
 
 <!-- /TOC -->
 
+## CHANGE NOTES
+
+* `0.4.0` Added filtering functions:
+    * filtering by gene name(s) with respect to .bed and .gtf files
+    * filtering by contig
+* `0.3.0` Stable version 
+
 ## GETTING STARTED
 
 ### Using the Docker image
@@ -66,7 +74,7 @@ First, we specify the remote Maven [repository](https://bintray.com/tmoerman/mav
 Next, we specify the library dependencies. We need both the VCF-comp library and the BDGenomics Adam library, but without Hadoop and Spark dependencies, because these are already provided automatically in the Spark Notebook environment.
 
 ```
-:dp org.tmoerman % vcf-comp_2.10 % 0.3.2
+:dp org.tmoerman % vcf-comp_2.10 % 0.4.0
 :dp org.bdgenomics.adam % adam-core % 0.17.1
 - org.apache.hadoop % hadoop-client %   _
 - org.apache.spark  %     _         %   _

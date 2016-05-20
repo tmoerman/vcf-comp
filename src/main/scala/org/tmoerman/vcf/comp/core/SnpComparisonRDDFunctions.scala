@@ -9,6 +9,7 @@ import org.tmoerman.vcf.comp.core.Model._
 import org.tmoerman.vcf.comp.core.SnpComparison._
 import org.tmoerman.vcf.comp.util.ApiHelp
 import org.bdgenomics.formats.avro.Feature
+import scala.collection.JavaConverters._
 
 object SnpComparisonLabels {
 
@@ -162,8 +163,6 @@ class SnpComparisonRDDFunctions(private[this] val rdd: RDD[OccurrenceRow[Annotat
       .countByValue
       .map{ case ((cat, p), count) => CategoryProjectionCount(cat, p, count) }
 
-  def matchesStart(s1: String, s2: String) = s1.toLowerCase.startsWith(s2.toLowerCase)
-
   private def region(g: AnnotatedGenotype): ReferenceRegion = {
     val variant = g.getGenotype.getVariant
 
@@ -176,20 +175,53 @@ class SnpComparisonRDDFunctions(private[this] val rdd: RDD[OccurrenceRow[Annotat
   /**
     * @param queryGeneNames
     * @param featuresByRegionRDD
-    * @return Returns an RDD of rows that match the specified contig.
+    * @return Returns an RDD of rows that match any of the specified genes.
     */
   def filterByGene(queryGeneNames: String*)
-                  (implicit featuresByRegionRDD: RDD[(ReferenceRegion, Feature)]) = filterByGenes(queryGeneNames)
+                  (implicit featuresByRegionRDD: RDD[(ReferenceRegion, Feature)]) =
+    filterByGenePredicate {
+      (gene: String) => queryGeneNames.exists(_.equalsIgnoreCase(gene))
+    }
 
-  def filterByGenes(queryGeneNames: Iterable[String])
-                   (implicit featuresByRegionRDD: RDD[(ReferenceRegion, Feature)]) = {
+  /**
+    * @param genePredicates
+    * @param featuresByRegionRDD
+    * @return Returns an RDD of rows that match any of the specified gene predicates.
+    */
+  def filterByGenePredicates(genePredicates: ((String) => Boolean)*)
+                            (implicit featuresByRegionRDD: RDD[(ReferenceRegion, Feature)]): RDD[OccurrenceRow[AnnotatedGenotype]] =
+    filterByGenePredicate {
+      (gene: String) => genePredicates.exists(_.apply(gene))
+    }
 
+  /**
+    * @param genePredicate
+    * @param featuresByRegionRDD
+    * @return Returns an RDD of rows that match the specified gene predicate
+    */
+  def filterByGenePredicate(genePredicate: (String) => Boolean)
+                           (implicit featuresByRegionRDD: RDD[(ReferenceRegion, Feature)]): RDD[OccurrenceRow[AnnotatedGenotype]] =
+    filterByFeaturePredicate {
+      (feature: Feature) =>
+        feature
+          .getAttributes
+          .asScala
+          .get("gene_name")
+          .orElse(Option(feature.getFeatureType))
+          .exists(genePredicate)
+    }
+
+  /**
+    * @param queryPredicate
+    * @param featuresByRegionRDD
+    * @return Returns an RDD of rows that match the specified Feature predicate
+    */
+  def filterByFeaturePredicate(queryPredicate: (Feature) => Boolean)
+                              (implicit featuresByRegionRDD: RDD[(ReferenceRegion, Feature)]) = {
     val filteredFeaturesRDD =
       featuresByRegionRDD
-        .filter{ case (region, feature) =>
-          queryGeneNames.exists(queryGene =>
-            matchesStart(feature.getFeatureType, queryGene)) }
-    
+        .filter{ case (_, feature) => queryPredicate(feature) }
+
     val occurrenceRowsByRegionRDD =
       rdd.flatMap(row =>
         flattenToReps()(row)
@@ -206,19 +238,13 @@ class SnpComparisonRDDFunctions(private[this] val rdd: RDD[OccurrenceRow[Annotat
 
   /**
     * @param contigNames
-    * @return Returns an RDD of rows that match the specified contig.
+    * @return Returns an RDD of rows that match any of the specified contigs.
     */
-  def filterByContig(contigNames: String*) = filterByContigs(contigNames)
-
-  /**
-    * @param contigNames
-    * @return Returns an RDD of rows that match the specified list of contigs.
-    */
-  def filterByContigs(contigNames: Iterable[String]) =
+  def filterByContig(contigNames: String*) =
     rdd.filter(row =>
       flattenToReps()(row)
         .map{ case (_, genotype) => contig(genotype) }
-        .exists(candidateContig => contigNames.exists(contigName => matchesStart(candidateContig, contigName))))
+        .exists(candidateContig => contigNames.exists(_.equalsIgnoreCase(candidateContig))))
 
   def countBySwitch[P](projection: AnnotatedGenotype => Option[P]): Iterable[CategoryProjectionCount[String]] =
     rdd

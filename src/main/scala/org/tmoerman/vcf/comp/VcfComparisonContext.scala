@@ -54,10 +54,11 @@ class VcfComparisonContextFunctions(private[this] val sc: SparkContext) extends 
                           sc.loadAnnotatedGenotypes(vcfFileB))
 
   /**
-    * @param bedFile
+    * @param filePath
     * @return Returns an RDD of Features by Reference region
     */
-  def loadFeaturesByRegion(bedFile: String) = sc.loadFeatures(bedFile).keyBy(ReferenceRegion(_))
+  def loadFeaturesByRegion(filePath: String) = sc.loadFeatures(filePath).keyBy(ReferenceRegion(_))
 
+  // TODO from a Feature, can we tell what kind of file produced it?
 
 }
