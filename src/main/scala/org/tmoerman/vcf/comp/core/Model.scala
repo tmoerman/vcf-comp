@@ -48,10 +48,10 @@ object Model extends Serializable {
 
   // QUALITY
 
-  type Quality = Double
+  type Quality = Int
 
-  def quality(genotype: Genotype): Quality = genotype.getVariantCallingAnnotations.getVariantCallErrorProbability.toDouble
-
+  def quality(genotype: Genotype): Quality = genotype.getGenotypeQuality
+  
   def quality(genotype: AnnotatedGenotype): Quality = quality(genotype.getGenotype)
 
   // SNP
