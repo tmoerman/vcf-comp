@@ -22,7 +22,7 @@ libraryDependencies ++= Seq(
   "org.bdgenomics.adam" % "adam-core_2.10" % adamVersion exclude("org.apache.hadoop", "*"),
   "org.bdgenomics.adam" % "adam-apis_2.10" % adamVersion,
   "org.bdgenomics.bdg-formats" % "bdg-formats" % "0.7.0",
-  "org.tmoerman" %% "adam-fx" % "0.5.3",
+  "org.tmoerman" %% "adam-fx" % "0.6.0",
   "org.scalaz" %% "scalaz-core" % "7.0.6",
   "org.scalatest" %% "scalatest" % "2.2.4" % "test"
 )
