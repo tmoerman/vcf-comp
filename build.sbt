@@ -15,11 +15,13 @@ resolvers ++= Seq(
   "bintray-tmoerman" at "http://dl.bintray.com/tmoerman/maven"
 )
 
+val adamVersion = "0.19.0"
+
 libraryDependencies ++= Seq(
   "org.apache.spark" % "spark-core_2.10" % "1.4.1" % "provided",
-  "org.bdgenomics.adam" % "adam-core_2.10" % "0.17.+" exclude("org.apache.hadoop", "*"),
-  "org.bdgenomics.adam" % "adam-apis_2.10" % "0.17.+",
-  "org.bdgenomics.bdg-formats" % "bdg-formats" % "0.4.0",
+  "org.bdgenomics.adam" % "adam-core_2.10" % adamVersion exclude("org.apache.hadoop", "*"),
+  "org.bdgenomics.adam" % "adam-apis_2.10" % adamVersion,
+  "org.bdgenomics.bdg-formats" % "bdg-formats" % "0.7.0",
   "org.tmoerman" %% "adam-fx" % "0.5.3",
   "org.scalaz" %% "scalaz-core" % "7.0.6",
   "org.scalatest" %% "scalatest" % "2.2.4" % "test"
